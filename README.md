@@ -1,47 +1,120 @@
-# TrackTrash Web
+<p align="center">
+  <img src="docs/assets/banner.svg" alt="TrackTrash, plataforma web de recojo y reciclaje en Arequipa" width="100%">
+</p>
 
-Aplicación web de TrackTrash: sitio público, panel por rol (hogar, organización, recolector y administrador) y
-gestión del catálogo. Consume la API de `Luladusilva/TrackTrash` (ASP.NET Core, PostgreSQL).
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19-143d2b?style=for-the-badge&logo=react&logoColor=d7f58b" alt="React 19">
+  <img src="https://img.shields.io/badge/TypeScript-strict-143d2b?style=for-the-badge&logo=typescript&logoColor=d7f58b" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-4-143d2b?style=for-the-badge&logo=tailwindcss&logoColor=d7f58b" alt="Tailwind CSS 4">
+  <img src="https://img.shields.io/badge/Vite-8-143d2b?style=for-the-badge&logo=vite&logoColor=d7f58b" alt="Vite">
+  <img src="https://img.shields.io/badge/Cloudflare_Pages-listo-143d2b?style=for-the-badge&logo=cloudflare&logoColor=d7f58b" alt="Cloudflare Pages">
+</p>
 
-## Stack
+<p align="center">
+  <a href="#funcionalidades">Funcionalidades</a> ·
+  <a href="#capturas">Capturas</a> ·
+  <a href="#arquitectura">Arquitectura</a> ·
+  <a href="#ejecutar-en-local">Ejecutar en local</a> ·
+  <a href="#despliegue">Despliegue</a>
+</p>
 
-React 19, TypeScript, Vite, Tailwind CSS 4, React Router, TanStack Query, React Hook Form + Zod, Recharts y Leaflet.
+## Sobre el proyecto
 
-## Estructura
+**TrackTrash** coordina el recojo de residuos reciclables en Arequipa entre hogares, organizaciones y recolectores
+verificados. Esta es la aplicación web: sitio público, panel por rol y administración del catálogo. Consume la API REST
+del backend en ASP.NET Core y comparte el contrato con la [app móvil en Flutter](https://github.com/CarlosFloresDev/tracktrash-mobile).
+
+| Repositorio | Tecnología |
+| --- | --- |
+| Web (este repositorio) | React, TypeScript, Tailwind CSS |
+| [Mobile](https://github.com/CarlosFloresDev/tracktrash-mobile) | Flutter, Riverpod |
+| [Backend](https://github.com/Luladusilva/TrackTrash) | ASP.NET Core 10, CQRS con MediatR, PostgreSQL |
+
+## Funcionalidades
+
+| Rol | Qué puede hacer |
+| --- | --- |
+| Visitante | Landing con indicadores en vivo, catálogo de materiales y mapa de puntos de acopio |
+| Hogar y organización | Crear solicitudes con varios materiales, dirección con GPS, seguimiento por estados, historial, cancelar y calificar |
+| Recolector | Recojos disponibles, tomar, iniciar, registrar material recuperado, finalizar o soltar; kilos y calificación propios |
+| Administrador | Indicadores con gráficos, todas las solicitudes, asignación de recolectores, verificación de documentos, usuarios y catálogo |
+
+Detalles de experiencia: animaciones al hacer scroll, contadores animados, transiciones entre páginas, estados de carga,
+vacío y error en todas las vistas, y soporte para "reducir movimiento" del sistema operativo.
+
+## Capturas
+
+<p align="center">
+  <img src="docs/assets/landing-hero.png" alt="Landing de TrackTrash" width="100%">
+</p>
+
+<table>
+  <tr>
+    <td><img src="docs/assets/admin-dashboard.png" alt="Panel de indicadores del administrador"></td>
+    <td><img src="docs/assets/detail-done.png" alt="Detalle de una solicitud con mapa e historial"></td>
+  </tr>
+  <tr>
+    <td align="center">Indicadores del administrador</td>
+    <td align="center">Detalle de solicitud con mapa e historial</td>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/gatherer-dashboard.png" alt="Panel del recolector"></td>
+    <td><img src="docs/assets/new-request.png" alt="Formulario de nueva solicitud"></td>
+  </tr>
+  <tr>
+    <td align="center">Panel del recolector</td>
+    <td align="center">Nueva solicitud</td>
+  </tr>
+</table>
+
+## Arquitectura
+
+```mermaid
+flowchart LR
+  subgraph Web["tracktrash-web"]
+    Pages["pages/ por rol"] --> Hooks["api/hooks (TanStack Query)"]
+    Hooks --> Endpoints["api/endpoints"]
+    Endpoints --> Zod["Validación con Zod"]
+    Pages --> Auth["features/auth (AuthGateway)"]
+  end
+  Zod -->|HTTP JSON| API["API ASP.NET Core"]
+  API --> DB[("PostgreSQL")]
+```
 
 ```
 src/
-  api/          contrato del backend: enums, esquemas Zod, endpoints tipados y hooks de TanStack Query
-  app/          router y proveedores
-  components/   brand (logo, íconos SVG, ilustraciones), layout, ui (primitivos), map
+  api/          contrato del backend: enums, esquemas Zod, endpoints tipados y hooks
+  app/          router con carga diferida por página y proveedores
+  components/   brand (logo e ilustraciones SVG), layout, ui (kit propio), map
   features/     auth (gateway reemplazable) y requests (listas y cruces de datos)
   lib/          cliente HTTP, formato es-PE, variables de entorno
-  pages/        public/ y app/ (una página por pantalla, cargadas con lazy)
-local-dev/      vistas SQL locales, datos de ejemplo y scripts para base local
-docs/           HALLAZGOS_BACKEND.md: lo que debe corregir el equipo del backend
+  pages/        public/ y app/
+local-dev/      vistas SQL locales, datos de ejemplo y scripts de base local
+docs/           hallazgos del backend y recursos del README
 ```
 
-Decisiones:
+Decisiones de diseño:
 
-* Las respuestas se validan con Zod: si el backend cambia el contrato, el error es claro y temprano.
-* `AuthGateway` aísla el acceso. Hoy el backend no valida contraseñas (ver `docs/HALLAZGOS_BACKEND.md`),
-  así que la implementación provisional identifica la cuenta por correo y la interfaz lo avisa.
-* Las transiciones de estado replican `CollectRequestStatusRules` del backend para ofrecer solo acciones válidas.
+* **Contrato validado:** cada respuesta pasa por un esquema Zod; si el backend cambia, el error aparece de inmediato.
+* **Acceso aislado:** `AuthGateway` encapsula el inicio de sesión. Cuando el backend publique `POST /api/Auth/login`
+  solo cambia ese archivo (ver [hallazgos del backend](docs/HALLAZGOS_BACKEND.md)).
+* **Reglas espejo:** las transiciones de estado replican `CollectRequestStatusRules` para mostrar solo acciones válidas.
+* **Rendimiento:** páginas con `lazy`, gráficos y mapa en chunks separados, imágenes en WebP.
 
 ## Ejecutar en local
 
-Requisitos: Node 22+, .NET SDK 10 y PostgreSQL 15+ (se usa uno portátil en `D:\DevTools\postgres`).
+Requisitos: Node 22+, .NET SDK 10 y PostgreSQL 15+.
 
 ```bash
-# 1. Base de datos y datos de ejemplo
+# 1. Base de datos
 local-dev/start-db.cmd
 psql -h localhost -p 54329 -U postgres -c "create database tracktrash_db"
 psql -h localhost -p 54329 -U postgres -d tracktrash_db -f <backend>/database/01_schema.sql
 psql -h localhost -p 54329 -U postgres -d tracktrash_db -f local-dev/01_views.sql
 
-# 2. API (copia de solo lectura del backend, sin tocar su repositorio)
+# 2. API (desde una copia del backend; su repositorio no se modifica)
 local-dev/run-api.cmd            # http://localhost:5145
-node local-dev/seed.mjs          # cuentas de ejemplo, contraseña TrackTrash2026!
+node local-dev/seed.mjs          # datos de ejemplo
 
 # 3. Web
 cp .env.example .env.local
@@ -49,14 +122,35 @@ npm install
 npm run dev
 ```
 
-Cuentas de ejemplo: `admin@tracktrash.pe`, `lucia@correo.pe` (hogar), `picanteria@correo.pe` (organización),
-`elmer@recicla.pe` (recolector verificado), `sofia@recicla.pe` (recolector en revisión).
+Cuentas de ejemplo (contraseña `TrackTrash2026!`):
 
-## Scripts
+| Rol | Correo |
+| --- | --- |
+| Administrador | `admin@tracktrash.pe` |
+| Hogar | `lucia@correo.pe` |
+| Organización | `picanteria@correo.pe` |
+| Recolector verificado | `elmer@recicla.pe` |
+| Recolector en revisión | `sofia@recicla.pe` |
 
-| Comando | Qué hace |
+| Comando | Descripción |
 | --- | --- |
 | `npm run dev` | Servidor de desarrollo |
-| `npm run build` | Comprueba tipos y genera `dist/` |
+| `npm run build` | Verificación de tipos y build de producción en `dist/` |
 | `npm run lint` | ESLint |
 | `npm test` | Pruebas con Vitest |
+
+## Despliegue
+
+Cloudflare Pages conectado a este repositorio:
+
+| Opción | Valor |
+| --- | --- |
+| Comando de build | `npm run build` |
+| Carpeta de salida | `dist` |
+| Variable de entorno | `VITE_API_BASE_URL=https://<api-en-render>` |
+
+`public/_redirects` ya enruta todas las rutas a `index.html` para que funcione la navegación de React.
+
+---
+
+<p align="center">Proyecto académico de Tecsup Arequipa, 2026.</p>
