@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import {
   BarChart3,
@@ -58,6 +58,7 @@ const navigation: Record<UserRole, NavItem[]> = {
 export function AppShell() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
   if (!user) return null
   const items = navigation[user.roleId]
@@ -166,7 +167,7 @@ export function AppShell() {
       )}
 
       <main id="contenido" className="min-w-0 px-4 py-6 sm:px-8 sm:py-8">
-        <div className="mx-auto max-w-6xl">
+        <div key={pathname} className="mx-auto max-w-6xl animate-fade-up">
           <Outlet />
         </div>
       </main>

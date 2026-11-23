@@ -212,5 +212,5 @@ export const TextAreaField = forwardRef<HTMLTextAreaElement, TextAreaFieldProps>
 })
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div aria-hidden="true" className={clsx('animate-pulse rounded-lg bg-leaf-100/70', className)} />
+  return <div aria-hidden="true" className={clsx('rounded-lg bg-[linear-gradient(90deg,#e6f3ea_25%,#f3faf5_50%,#e6f3ea_75%)] bg-[length:200%_100%] [animation:shimmer_1.6s_linear_infinite]', className)} />
 }

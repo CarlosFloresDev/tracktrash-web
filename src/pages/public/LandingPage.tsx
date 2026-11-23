@@ -7,6 +7,7 @@ import { MaterialIcon, materialKind } from '@/components/brand/MaterialIcon'
 import { RouteDiagram, SkylineScene } from '@/components/brand/Illustrations'
 import { ButtonLink } from '@/components/ui/primitives'
 import { Skeleton } from '@/components/ui/primitives'
+import { CountUp, Reveal } from '@/components/ui/motion'
 
 const steps = [
   {
@@ -52,20 +53,22 @@ function ImpactNumbers() {
   if (query.isError) return null
   const items = query.data
     ? [
-        { label: 'kg recuperados', value: formatNumber(query.data.recoveredKilograms) },
-        { label: 'recojos completados', value: formatNumber(query.data.completedServices) },
-        { label: 'recolectores verificados', value: formatNumber(query.data.verifiedGatherers) },
-        { label: 'organizaciones', value: formatNumber(query.data.totalOrganizations) },
+        { label: 'kg recuperados', value: query.data.recoveredKilograms },
+        { label: 'recojos completados', value: query.data.completedServices },
+        { label: 'recolectores verificados', value: query.data.verifiedGatherers },
+        { label: 'organizaciones', value: query.data.totalOrganizations },
       ]
     : null
   return (
-    <section aria-label="Impacto de TrackTrash" className="relative z-10 mx-auto -mt-10 max-w-6xl px-4 sm:px-6">
+    <section aria-label="Impacto de TrackTrash" className="relative z-10 mx-auto -mt-10 max-w-6xl animate-fade-up px-4 [animation-delay:400ms] sm:px-6">
       <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line shadow-card md:grid-cols-4">
         {(items ?? Array.from({ length: 4 }, () => null)).map((item, index) => (
-          <div key={item?.label ?? index} className="bg-white px-5 py-6 text-center">
+          <div key={item?.label ?? index} className="bg-white px-5 py-6 text-center transition-colors hover:bg-leaf-50">
             {item ? (
               <>
-                <dd className="font-display text-3xl font-bold tabular-nums text-pine-900 sm:text-4xl">{item.value}</dd>
+                <dd className="text-gradient font-display text-3xl font-bold tabular-nums sm:text-4xl">
+                  <CountUp value={item.value} format={formatNumber} />
+                </dd>
                 <dt className="mt-1 text-sm text-muted">{item.label}</dt>
               </>
             ) : (
@@ -90,15 +93,15 @@ function Materials() {
               <Skeleton className="h-36" />
             </li>
           ))
-        : recyclable.map((item) => (
-            <li key={item.residueTypeId} className="rounded-2xl border border-line bg-white p-5 shadow-card">
-              <MaterialIcon kind={materialKind(item.name)} />
+        : recyclable.map((item, index) => (
+            <Reveal as="li" key={item.residueTypeId} delay={(index % 4) * 80} className="card-lift group rounded-2xl border border-line bg-white p-5 shadow-card hover:border-leaf-400">
+              <MaterialIcon kind={materialKind(item.name)} className="transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110" />
               <h3 className="mt-4 font-display text-lg font-semibold">{item.name}</h3>
               <p className="mt-1 text-sm text-muted">{item.classificationInstructions ?? item.description}</p>
               <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-leaf-600">
                 {labels.category[item.residueCategoryId]}
               </p>
-            </li>
+            </Reveal>
           ))}
     </ul>
   )
@@ -108,17 +111,19 @@ export function LandingPage() {
   return (
     <>
       <section className="relative isolate overflow-hidden bg-paper">
+        <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-24 -z-10 size-[28rem] animate-blob rounded-full bg-lime-300/40 blur-3xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-10 -z-10 size-[24rem] animate-blob rounded-full bg-leaf-400/25 blur-3xl [animation-delay:-5s]" />
         <div className="absolute inset-x-0 bottom-0 -z-10 h-[26rem] opacity-90 sm:h-[30rem]">
           <SkylineScene className="size-full" />
         </div>
         <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-28 pt-12 sm:px-6 md:grid-cols-[1.15fr_1fr] md:pb-36 md:pt-20">
-          <div>
+          <div className="animate-fade-up">
             <p className="inline-flex items-center gap-2 rounded-full bg-leaf-100 px-3.5 py-1.5 text-sm font-semibold text-pine-800">
               <Sprout className="size-4" aria-hidden="true" />
               Reciclaje coordinado en Arequipa
             </p>
             <h1 className="mt-5 font-display text-4xl font-extrabold leading-[1.05] sm:text-5xl lg:text-6xl">
-              Tus residuos reciclables, <span className="text-leaf-600">recogidos y medidos.</span>
+              Tus residuos reciclables, <span className="text-gradient">recogidos y medidos.</span>
             </h1>
             <p className="mt-5 max-w-xl text-lg text-muted">
               TrackTrash conecta hogares, colegios y negocios con recolectores verificados. Pides el recojo, sigues el
@@ -135,13 +140,22 @@ export function LandingPage() {
               </ButtonLink>
             </div>
           </div>
-          <div className="relative mx-auto w-full max-w-sm md:max-w-none">
+          <div className="relative mx-auto w-full max-w-sm animate-fade-up [animation-delay:150ms] md:max-w-none">
+            <div aria-hidden="true" className="absolute inset-[12%] rounded-full bg-lime-300/50 blur-3xl" />
+            <div className="absolute left-0 top-[18%] z-20 hidden animate-float rounded-2xl border border-line bg-white/90 px-4 py-3 shadow-card backdrop-blur [animation-delay:-2s] sm:block">
+              <p className="text-xs font-medium text-muted">Recojo en camino</p>
+              <p className="font-display text-sm font-bold text-pine-900">Yanahuara, 09:00</p>
+            </div>
+            <div className="absolute bottom-[14%] right-0 z-20 hidden animate-float rounded-2xl bg-pine-900 px-4 py-3 text-white shadow-card [animation-delay:-4s] sm:block">
+              <p className="text-xs text-white/70">Material recuperado</p>
+              <p className="font-display text-sm font-bold text-lime-300">+18 kg de cartón</p>
+            </div>
             <img
               src="/mascot.webp"
               alt="Tacho verde sonriente de TrackTrash frente al volcán Misti, junto a cartón, una botella y una planta"
               width="900"
               height="900"
-              className="relative z-10 mx-auto w-full max-w-md drop-shadow-xl"
+              className="relative z-10 mx-auto w-full max-w-md animate-float drop-shadow-2xl"
               fetchPriority="high"
             />
           </div>
@@ -158,7 +172,7 @@ export function LandingPage() {
         <RouteDiagram className="mx-auto mt-10 hidden w-full max-w-xl md:block" />
         <ol className="mt-6 grid gap-6 md:grid-cols-3">
           {steps.map((step, index) => (
-            <li key={step.title} className="rounded-2xl border border-line bg-white p-6 shadow-card">
+            <Reveal as="li" key={step.title} delay={index * 120} className="card-lift rounded-2xl border border-line bg-white p-6 shadow-card">
               <div className="flex items-center gap-3">
                 <span className="grid size-11 place-items-center rounded-xl bg-leaf-100 text-leaf-600">
                   <step.icon className="size-5" aria-hidden="true" />
@@ -167,7 +181,7 @@ export function LandingPage() {
               </div>
               <h3 className="mt-4 font-display text-xl font-semibold">{step.title}</h3>
               <p className="mt-2 text-sm text-muted">{step.text}</p>
-            </li>
+            </Reveal>
           ))}
         </ol>
       </section>
@@ -190,20 +204,55 @@ export function LandingPage() {
           <p className="mt-3 text-muted">Cada persona ve solo lo que necesita para cumplir su parte del recojo.</p>
         </div>
         <div className="mt-10 grid gap-6 md:grid-cols-3">
-          {audiences.map((audience) => (
-            <article key={audience.title} className="flex flex-col rounded-2xl bg-pine-900 p-6 text-white">
+          {audiences.map((audience, index) => (
+            <Reveal as="article" key={audience.title} delay={index * 120} className="card-lift group relative flex flex-col overflow-hidden rounded-2xl bg-pine-900 p-6 text-white">
+              <div aria-hidden="true" className="absolute -right-10 -top-10 size-32 rounded-full bg-lime-300/10 transition-transform duration-500 group-hover:scale-150" />
               <h3 className="font-display text-2xl font-semibold text-white">{audience.title}</h3>
               <p className="mt-2 flex-1 text-sm text-white/75">{audience.text}</p>
               <Link to={audience.to} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-lime-300 hover:text-lime-200">
                 {audience.cta}
-                <ArrowRight className="size-4" aria-hidden="true" />
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
               </Link>
-            </article>
+            </Reveal>
           ))}
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
+      <section className="relative overflow-hidden bg-pine-950 py-20 text-white">
+        <div aria-hidden="true" className="absolute -left-20 top-0 size-96 animate-blob rounded-full bg-leaf-600/30 blur-3xl" />
+        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 md:grid-cols-2">
+          <Reveal>
+            <p className="text-sm font-semibold uppercase tracking-widest text-lime-300">App móvil</p>
+            <h2 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">Tu recojo en el bolsillo</h2>
+            <p className="mt-4 max-w-md text-white/70">
+              La app para Android acompaña al hogar y al recolector en la calle: crear solicitudes, tomar recojos, registrar los
+              kilos y ver los puntos de acopio en el mapa.
+            </p>
+            <ul className="mt-6 space-y-2 text-sm text-white/85">
+              {['Estados de cada recojo', 'Mapa de puntos de acopio', 'Registro de material recuperado'].map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <span className="size-1.5 rounded-full bg-lime-300" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+          <div className="relative flex justify-center gap-5">
+            {[
+              { src: '/app-home.webp', alt: 'Pantalla de inicio de la app con recojos activos', className: 'mt-10 -rotate-3' },
+              { src: '/app-points.webp', alt: 'Pantalla de puntos de acopio con mapa de Arequipa', className: 'rotate-3' },
+            ].map((phone, index) => (
+              <Reveal key={phone.src} delay={index * 150} className={phone.className}>
+                <div className="card-lift w-44 rounded-[2rem] border-4 border-white/15 bg-black p-1.5 shadow-2xl sm:w-52">
+                  <img src={phone.src} alt={phone.alt} width="390" height="844" loading="lazy" className="w-full rounded-[1.5rem]" />
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
         <div className="flex flex-col items-start justify-between gap-6 rounded-3xl bg-lime-300 p-8 sm:flex-row sm:items-center sm:p-12">
           <div className="max-w-xl">
             <h2 className="font-display text-3xl font-bold text-pine-950">Empieza con tu primer recojo</h2>

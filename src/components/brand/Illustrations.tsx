@@ -58,7 +58,7 @@ export function SkylineScene({ className }: { className?: string }) {
 export function RouteDiagram({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 480 120" className={clsx('block', className)} aria-hidden="true">
-      <path d="M40 60 H440" stroke="#58b98a" strokeWidth="3" strokeDasharray="2 9" strokeLinecap="round" />
+      <path d="M40 60 H440" stroke="#58b98a" strokeWidth="3" strokeDasharray="2 10" strokeLinecap="round" className="animate-dash" />
       <g>
         <circle cx="60" cy="60" r="30" fill="#dcf1e5" />
         <path d="M60 44c-6 0-10 4.5-10 9.5 0 7 8.5 14 9.2 14.6.500.4 1.1.400 1.6 0 .700-.600 9.2-7.6 9.2-14.600C70 48.5 66 44 60 44z" fill="#217a51" />
