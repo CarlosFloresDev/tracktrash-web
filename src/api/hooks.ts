@@ -19,6 +19,7 @@ export const keys = {
   users: ['users'] as const,
   locations: ['locations'] as const,
   requests: ['requests'] as const,
+  requestDetails: ['request-details'] as const,
   request: (id: number) => ['requests', id] as const,
   requestHistory: (id: number) => ['requests', id, 'history'] as const,
   userRequests: (userId: number) => ['requests', 'user', userId] as const,
@@ -42,7 +43,7 @@ const noRetryOnClientError = (count: number, error: unknown) =>
 
 const defaults = { retry: noRetryOnClientError }
 
-export const useUsers = () => useQuery({ queryKey: keys.users, queryFn: usersApi.list, ...defaults })
+export const useUsers = (enabled = true) => useQuery({ queryKey: keys.users, queryFn: usersApi.list, enabled, ...defaults })
 export const useLocations = () => useQuery({ queryKey: keys.locations, queryFn: locationsApi.list, ...defaults })
 export const useResidueTypes = () =>
   useQuery({ queryKey: keys.residueTypes, queryFn: residueTypesApi.list, staleTime: 5 * 60_000, ...defaults })
@@ -65,6 +66,25 @@ export const useRequestFull = (id: number) =>
   useQuery({ queryKey: keys.request(id), queryFn: () => requestsApi.full(id), ...defaults })
 export const useRequestHistory = (id: number) =>
   useQuery({ queryKey: keys.requestHistory(id), queryFn: () => requestsApi.history(id), ...defaults })
+
+export const useAllRequestDetails = () =>
+  useQuery({ queryKey: keys.requestDetails, queryFn: requestDetailsApi.list, ...defaults })
+
+/** Resolves to `null` (not an error) when the user has not rated that service yet. */
+export const useMyGrade = (serviceId: number | undefined, userId: number) =>
+  useQuery({
+    queryKey: [...keys.grades, serviceId, userId],
+    enabled: serviceId !== undefined,
+    ...defaults,
+    queryFn: async () => {
+      try {
+        return await gradesApi.byServiceAndUser(serviceId!, userId)
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) return null
+        throw error
+      }
+    },
+  })
 
 export const useServices = () => useQuery({ queryKey: keys.services, queryFn: pickupServicesApi.list, ...defaults })
 export const useGathererServices = (gathererId: number | undefined) =>
@@ -100,7 +120,7 @@ export const useGathererRatings = () =>
  */
 export function useInvalidatingMutation<TVariables, TResult>(
   mutationFn: (variables: TVariables) => Promise<TResult>,
-  invalidate: readonly QueryKey[] = [keys.requests, keys.services, keys.indicators],
+  invalidate: readonly QueryKey[] = [keys.requests, keys.requestDetails, keys.services, keys.allMaterials, keys.grades, keys.indicators],
 ) {
   const queryClient = useQueryClient()
   return useMutation({

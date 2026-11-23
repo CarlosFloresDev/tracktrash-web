@@ -64,8 +64,8 @@ const glyphs: Record<MaterialKind, ReactNode> = {
   ),
   oil: (
     <>
-      <path d="M12 3c3.5 4.2 6 7 6 10.2A6 6 0 0 1 12 19a6 6 0 0 1-6-5.8C6 10 8.5 7.200 12 3z" />
-      <path d="M9.500 14.200a2.600 2.600 0 0 0 2 2" />
+      <path d="M12 3c3.5 4.2 6 7 6 10.2A6 6 0 0 1 12 19a6 6 0 0 1-6-5.8C6 10 8.5 7.2 12 3z" />
+      <path d="M9.5 14.200a2.6 2.6 0 0 0 2 2" />
     </>
   ),
   organic: (
@@ -76,7 +76,7 @@ const glyphs: Record<MaterialKind, ReactNode> = {
   ),
   other: (
     <>
-      <path d="M5 8h14l-1.200 12H6.200z" />
+      <path d="M5 8h14l-1.2 12H6.200z" />
       <path d="M4 8h16M9 8V5h6v3M10 12v5M14 12v5" />
     </>
   ),

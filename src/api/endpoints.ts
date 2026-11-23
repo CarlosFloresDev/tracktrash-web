@@ -101,6 +101,7 @@ export const requestsApi = {
 }
 
 export const requestDetailsApi = {
+  list: () => get('RequestDetail', list(requestDetailSchema)),
   byRequest: (id: number) => get(`RequestDetail/collect-request/${id}`, list(requestDetailSchema)),
   create: (body: {
     collectRequestId: number
