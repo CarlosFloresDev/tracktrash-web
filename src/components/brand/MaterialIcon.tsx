@@ -76,8 +76,8 @@ const glyphs: Record<MaterialKind, ReactNode> = {
   ),
   other: (
     <>
-      <path d="M5 8h14l-1.2 12H6.200z" />
-      <path d="M4 8h16M9 8V5h6v3M10 12v5M14 12v5" />
+      <path d="M12 3l8 4v10l-8 4-8-4V7z" />
+      <path d="M4 7l8 4 8-4M12 11v10" />
     </>
   ),
 }

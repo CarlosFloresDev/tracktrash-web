@@ -33,12 +33,12 @@ interface NavItem {
 const navigation: Record<UserRole, NavItem[]> = {
   Generator: [
     { to: '/app', label: 'Resumen', icon: LayoutDashboard, end: true },
-    { to: '/app/solicitudes', label: 'Mis solicitudes', icon: ClipboardList },
+    { to: '/app/solicitudes', label: 'Mis solicitudes', icon: ClipboardList, end: true },
     { to: '/app/solicitudes/nueva', label: 'Nueva solicitud', icon: PlusCircle },
   ],
   Organization: [
     { to: '/app', label: 'Resumen', icon: LayoutDashboard, end: true },
-    { to: '/app/solicitudes', label: 'Solicitudes', icon: ClipboardList },
+    { to: '/app/solicitudes', label: 'Solicitudes', icon: ClipboardList, end: true },
     { to: '/app/solicitudes/nueva', label: 'Nueva solicitud', icon: PlusCircle },
   ],
   Gatherer: [
@@ -48,7 +48,7 @@ const navigation: Record<UserRole, NavItem[]> = {
   ],
   Admin: [
     { to: '/app', label: 'Indicadores', icon: BarChart3, end: true },
-    { to: '/app/solicitudes', label: 'Solicitudes', icon: ClipboardList },
+    { to: '/app/solicitudes', label: 'Solicitudes', icon: ClipboardList, end: true },
     { to: '/app/recolectores', label: 'Recolectores', icon: ShieldCheck },
     { to: '/app/usuarios', label: 'Usuarios', icon: Users },
     { to: '/app/catalogo', label: 'Catálogo', icon: Tags },
