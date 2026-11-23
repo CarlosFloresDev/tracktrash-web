@@ -27,12 +27,7 @@ const statusMessages: Record<number, string> = {
 
 /** Translates the backend's error shapes (`{ error }` and ASP.NET validation problem details). */
 export async function toApiError(response: Response): Promise<ApiError> {
-  let payload: unknown = null
-  try {
-    payload = await response.json()
-  } catch {
-    payload = null
-  }
+  const payload: unknown = await response.json().catch(() => null)
   if (payload && typeof payload === 'object') {
     const data = payload as { error?: unknown; errors?: Record<string, string[]>; title?: unknown }
     if (data.errors && typeof data.errors === 'object') {

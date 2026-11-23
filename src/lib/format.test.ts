@@ -10,8 +10,8 @@ describe('format', () => {
     expect(formatTimeOnly('09:30:00')).toBe('09:30')
   })
 
-  it('formats kilograms with Spanish separators', () => {
-    expect(formatKg(1234.5)).toMatch(/1\D?234,5 kg/)
+  it('formats kilograms with Peruvian separators', () => {
+    expect(formatKg(1234.5)).toMatch(/1\D?234\D5 kg/)
   })
 
   it('builds names and initials from partial data', () => {

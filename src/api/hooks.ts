@@ -38,7 +38,7 @@ export const keys = {
 }
 
 /** A 404 from "get by owner" endpoints means "no profile yet", not a failure. */
-const noRetryOnClientError = (count: number, error: unknown) =>
+const noRetryOnClientError = (count: number, error: Error) =>
   !(error instanceof ApiError && error.status >= 400 && error.status < 500) && count < 2
 
 const defaults = { retry: noRetryOnClientError }
