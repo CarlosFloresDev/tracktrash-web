@@ -1,0 +1,72 @@
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/bricolage-grotesque';
+@import 'leaflet/dist/leaflet.css';
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque Variable', 'Inter Variable', ui-sans-serif, sans-serif;
+
+  --color-pine-950: #0b2619;
+  --color-pine-900: #143d2b;
+  --color-pine-800: #1a4d37;
+  --color-pine-700: #1f6444;
+  --color-leaf-600: #217a51;
+  --color-leaf-500: #2c9b66;
+  --color-leaf-400: #58b98a;
+  --color-leaf-100: #dcf1e5;
+  --color-leaf-50: #eef8f2;
+  --color-lime-300: #d7f58b;
+  --color-lime-200: #e6f9b4;
+  --color-sillar-100: #f5efe3;
+  --color-sillar-300: #e4d4b4;
+  --color-sillar-600: #a8793a;
+  --color-paper: #f6f7f2;
+  --color-ink: #17251d;
+  --color-muted: #5f6f64;
+  --color-line: #dfe6da;
+  --color-danger-600: #c2410c;
+  --color-danger-50: #fff1e8;
+  --color-info-600: #1d6fa5;
+  --color-info-50: #e8f3fa;
+  --color-warn-600: #a16207;
+  --color-warn-50: #fdf5dc;
+
+  --shadow-card: 0 1px 2px rgb(20 61 43 / 0.05), 0 8px 24px -12px rgb(20 61 43 / 0.18);
+  --radius-card: 1rem;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display tracking-tight text-pine-900;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-leaf-600;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+.leaflet-container {
+  font-family: inherit;
+  border-radius: inherit;
+}
