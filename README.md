@@ -24,6 +24,11 @@
 verificados. Esta es la aplicación web: sitio público, panel por rol y administración del catálogo. Consume la API REST
 del backend en ASP.NET Core y comparte el contrato con la [app móvil en Flutter](https://github.com/CarlosFloresDev/tracktrash-mobile).
 
+| En línea | URL |
+| --- | --- |
+| Web | https://tracktrash.pages.dev |
+| API | https://tracktrash-backend.onrender.com (estado: [`/api/health`](https://tracktrash-backend.onrender.com/api/health)) |
+
 | Repositorio | Tecnología |
 | --- | --- |
 | Web (este repositorio) | React, TypeScript, Tailwind CSS |
@@ -149,13 +154,15 @@ Cuentas de ejemplo (contraseña `TrackTrash2026!`):
 
 ## Despliegue
 
-Cloudflare Pages conectado a este repositorio:
+Publicado en Cloudflare Pages (proyecto `tracktrash`) en https://tracktrash.pages.dev, contra la API de Render:
 
-| Opción | Valor |
-| --- | --- |
-| Comando de build | `npm run build` |
-| Carpeta de salida | `dist` |
-| Variable de entorno | `VITE_API_BASE_URL=https://<api-en-render>` |
+```bash
+VITE_API_BASE_URL=https://tracktrash-backend.onrender.com npm run build
+npx wrangler pages deploy dist --project-name tracktrash --branch main
+```
+
+La API solo acepta este dominio por CORS (`Cors__AllowedOrigins` en Render). Si se publica en otro dominio, hay que
+agregarlo ahí. El plan gratuito de Render suspende la API sin tráfico: la primera petición puede tardar unos segundos.
 
 `public/_redirects` ya enruta todas las rutas a `index.html` para que funcione la navegación de React.
 
