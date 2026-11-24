@@ -4,13 +4,12 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '@/features/auth/auth'
-import { authGateway } from '@/features/auth/gateway'
 import { LogoMark } from '@/components/brand/Logo'
 import { Button, Card, TextField } from '@/components/ui/primitives'
 import { errorMessage, Notice } from '@/components/ui/feedback'
 
 const schema = z.object({
-  email: z.string().min(1, 'Ingresa tu correo').email('El correo no es válido'),
+  email: z.string().trim().min(1, 'Ingresa tu correo').email('El correo no es válido'),
   password: z.string().min(1, 'Ingresa tu contraseña'),
 })
 type FormValues = z.infer<typeof schema>
@@ -64,11 +63,7 @@ export function LoginPage() {
         })}
       >
         {registered && <Notice tone="success">Tu cuenta fue creada. Ya puedes ingresar.</Notice>}
-        {!authGateway.verifiesPassword && (
-          <Notice tone="warn" title="Acceso provisional">
-            El servidor aún no valida contraseñas. Por ahora se identifica la cuenta solo por correo.
-          </Notice>
-        )}
+
         <TextField label="Correo" type="email" autoComplete="email" error={errors.email?.message} {...register('email')} />
         <TextField
           label="Contraseña"

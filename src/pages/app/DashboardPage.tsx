@@ -4,7 +4,9 @@ import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
 import { Building2, CheckCircle2, ClipboardList, PackageSearch, Plus, Scale, ShieldCheck, Star, Truck, Users } from 'lucide-react'
 import { labels, requestStatuses } from '@/api/enums'
 import {
-  useAllMaterials,
+  useOwnGathererGrades,
+  useVisibleMaterials,
+  useVisibleRequestDetails,
   useAllRequestDetails,
   useAllRequests,
   useGathererRatings,
@@ -12,7 +14,6 @@ import {
   useGeneralIndicators,
   usePendingRequests,
   useResiduesByType,
-  useServices,
   useUserRequests,
 } from '@/api/hooks'
 import { useAuth } from '@/features/auth/auth'
@@ -200,22 +201,19 @@ function AdminDashboard() {
 function ResidentDashboard() {
   const { user, organization } = useAuth()
   const requests = useUserRequests(user?.userId)
-  const details = useAllRequestDetails()
-  const services = useServices()
-  const materials = useAllMaterials()
-  const grouped = useMemo(() => groupDetails(details.data), [details.data])
+  const details = useVisibleRequestDetails((requests.data ?? []).map((item) => item.collectRequestId))
+  const materials = useVisibleMaterials(details.data.flatMap((item) => item.pickupService ? [item.pickupService.pickupServiceId] : []))
+  const grouped = groupDetails(details.data.flatMap((item) => item.details))
 
   const stats = useMemo(() => {
     const mine = requests.data ?? []
-    const requestIds = new Set(mine.map((item) => item.collectRequestId))
-    const serviceIds = new Set((services.data ?? []).filter((item) => requestIds.has(item.collectRequestId)).map((item) => item.pickupServiceId))
-    const kg = (materials.data ?? []).filter((item) => serviceIds.has(item.pickupServiceId) && item.unitId === 'Kg').reduce((sum, item) => sum + item.quantity, 0)
+    const kg = materials.filter((item) => item.unitId === 'Kg').reduce((sum, item) => sum + item.quantity, 0)
     return {
       active: mine.filter((item) => item.statusId === 'Pending' || item.statusId === 'Assigned' || item.statusId === 'InProgress').length,
       completed: mine.filter((item) => item.statusId === 'Completed').length,
       kg,
     }
-  }, [requests.data, services.data, materials.data])
+  }, [requests.data, materials])
 
   return (
     <>
@@ -264,19 +262,14 @@ function ResidentDashboard() {
 function GathererDashboard() {
   const { user, gatherer } = useAuth()
   const services = useGathererServices(gatherer?.gathererId)
-  const pending = usePendingRequests()
-  const materials = useAllMaterials()
-  const ratings = useGathererRatings()
-  const requests = useAllRequests()
-  const details = useAllRequestDetails()
-  const grouped = useMemo(() => groupDetails(details.data), [details.data])
-
+  const pending = usePendingRequests(gatherer?.verificationStatusId === 'Verified')
+  const grades = useOwnGathererGrades(gatherer?.gathererId)
   const myServices = services.data ?? []
-  const kg = (materials.data ?? [])
-    .filter((item) => myServices.some((service) => service.pickupServiceId === item.pickupServiceId) && item.unitId === 'Kg')
-    .reduce((sum, item) => sum + item.quantity, 0)
-  const rating = ratings.data?.find((item) => item.gathererId === gatherer?.gathererId)
-  const activeRequests = (requests.data ?? []).filter((request) =>
+  const materials = useVisibleMaterials(myServices.map((item) => item.pickupServiceId))
+  const requests = useVisibleRequestDetails(myServices.map((item) => item.collectRequestId))
+  const grouped = groupDetails(requests.data.flatMap((item) => item.details))
+  const kg = materials.filter((item) => item.unitId === 'Kg').reduce((sum, item) => sum + item.quantity, 0)
+  const activeRequests = requests.data.map((item) => item.request).filter((request) =>
     myServices.some((service) => service.collectRequestId === request.collectRequestId && service.statusId !== 'Completed' && service.statusId !== 'Cancelled'),
   )
 
@@ -304,10 +297,9 @@ function GathererDashboard() {
         <StatCard label="Material recuperado" value={formatKg(kg)} icon={<Scale />} tone="lime" />
         <StatCard
           label="Calificación"
-          value={rating ? rating.averageScore.toFixed(1) : '-'}
+          value={grades.length ? (grades.reduce((sum, grade) => sum + grade.score, 0) / grades.length).toFixed(1) : "Sin calificaciones"}
           icon={<Star />}
           tone="sand"
-          hint={rating ? `${rating.totalGrades} calificaciones` : 'Aún sin calificaciones'}
         />
       </div>
       <Card className="mt-6">

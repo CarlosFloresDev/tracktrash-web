@@ -1,9 +1,10 @@
+import { request as apiRequest } from '@/lib/http'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, CalendarDays, CheckCircle2, Clock, MapPin, PackagePlus, Play, Star, Truck, XCircle } from 'lucide-react'
 import { labels, isFinalStatus, measurementUnits } from '@/api/enums'
-import { gradesApi, pickupServicesApi, recoveredMaterialsApi, requestsApi, usersApi } from '@/api/endpoints'
+import { gatherersApi, gradesApi, pickupServicesApi, recoveredMaterialsApi, requestsApi } from '@/api/endpoints'
 import {
   keys,
   useGatherers,
@@ -13,7 +14,7 @@ import {
   useRequestHistory,
   useServiceMaterials,
 } from '@/api/hooks'
-import type { CollectRequestFull, Gatherer } from '@/api/schemas'
+import type { CollectRequestFull } from '@/api/schemas'
 import { useAuth } from '@/features/auth/auth'
 import { useLookups } from '@/features/requests/lookups'
 import { formatDateOnly, formatDateTime, formatNumber, formatTimeOnly, fullName } from '@/lib/format'
@@ -24,13 +25,86 @@ import { Button, Card, CardHeader, SelectField, TextAreaField, TextField } from 
 import { DefinitionList, PageHeader, Rating, RatingInput, StatusBadge, Timeline } from '@/components/ui/widgets'
 
 /** Commission used when a gatherer takes a request themselves. The business rule lives outside this client. */
-const DEFAULT_COMMISSION = 10
 
 type Dialog = null | 'cancel' | 'assign' | 'material' | 'rate' | 'cancelService'
 
-function PersonName({ userId }: { userId: number }) {
-  const query = useQuery({ queryKey: ['users', userId], queryFn: () => usersApi.byId(userId), staleTime: 5 * 60_000 })
-  return <>{query.data ? fullName(query.data) : '...'}</>
+function RequesterName({ requestId }: { requestId: number }) {
+  const query = useQuery({
+    queryKey: ['requester-profile', requestId],
+    queryFn: () => apiRequest<{ firstName: string; lastName: string; organizationName: string | null }>(
+      `CollectRequest/${requestId}/requester-profile`,
+    ),
+  })
+  if (!query.data) return <>{query.isError ? 'No disponible' : '...'}</>
+  return <>{query.data.organizationName ?? fullName(query.data)}</>
+}
+
+type PickupApplication = {
+  applicationId: number
+  firstName: string
+  lastName: string
+  statusId: 'Pending' | 'Accepted' | 'Rejected' | 'Withdrawn'
+}
+
+function PickupApplications({ requestId, pending }: { requestId: number; pending: boolean }) {
+  const path = `CollectRequest/${requestId}/applications`
+  const query = useQuery({
+    queryKey: ['requests', requestId, 'applications'],
+    queryFn: () => apiRequest<PickupApplication[]>(path),
+  })
+  const toast = useToast()
+  const decision = useInvalidatingMutation(
+    ({ id, action }: { id: number; action: 'accept' | 'reject' }) =>
+      apiRequest(`${path}/${id}/${action}`, { method: 'POST' }),
+  )
+  return (
+    <Card>
+      <CardHeader title="Postulaciones" />
+      <div className="space-y-3 p-5">
+        {query.isPending && <ListSkeleton rows={2} />}
+        {query.isError && <ErrorState error={query.error} onRetry={() => void query.refetch()} />}
+        {query.data?.length === 0 && <p className="text-sm text-muted">Aún no hay postulaciones.</p>}
+        {query.data?.map((application) => (
+          <div key={application.applicationId} className="space-y-2">
+            <p className="font-medium">{fullName(application)}</p>
+            <p className="text-sm text-muted">{{ Pending: 'Pendiente', Accepted: 'Aceptada', Rejected: 'Rechazada', Withdrawn: 'Retirada' }[application.statusId]}</p>
+            {pending && application.statusId === 'Pending' && (
+              <div className="flex gap-2">
+                <Button disabled={decision.isPending} onClick={() => decision.mutate({ id: application.applicationId, action: 'accept' }, { onError: toast.error })}>Aceptar</Button>
+                <Button variant="secondary" disabled={decision.isPending} onClick={() => decision.mutate({ id: application.applicationId, action: 'reject' }, { onError: toast.error })}>Rechazar</Button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+function CompatibleGatherers({ requestId }: { requestId: number }) {
+  const query = useQuery({
+    queryKey: ['requests', requestId, 'compatible-gatherers'],
+    queryFn: () => gatherersApi.availableForCollectRequest(requestId),
+  })
+  return (
+    <Card>
+      <CardHeader title="Recolectores compatibles" description="Aceptan todos los materiales de esta solicitud." />
+      <div className="space-y-3 p-5">
+        {query.isPending && <ListSkeleton rows={2} />}
+        {query.isError && <ErrorState error={query.error} onRetry={() => void query.refetch()} />}
+        {query.data?.length === 0 && <p className="text-sm text-muted">Aún no hay recolectores verificados que acepten todos estos materiales.</p>}
+        {query.data?.map((gatherer) => (
+          <div key={gatherer.gathererId} className="rounded-xl border border-line p-3">
+            <p className="font-medium">{fullName(gatherer)}</p>
+            <p className="text-sm text-muted">{labels.gathererType[gatherer.gathererTypeId]}</p>
+            <p className="mt-1 text-xs text-muted">
+              Acepta: {(gatherer.supportedResidueTypes ?? []).map((item) => item.name).join(', ') || 'Sin materiales configurados'}
+            </p>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
 }
 
 export default function RequestDetailPage() {
@@ -83,7 +157,7 @@ export default function RequestDetailPage() {
 
   return (
     <>
-      <Link to="/app/solicitudes" className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-leaf-600 hover:underline">
+      <Link to={user.roleId === 'Gatherer' ? "/app/disponibles" : "/app/solicitudes"} className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-leaf-600 hover:underline">
         <ArrowLeft className="size-4" aria-hidden="true" />
         Volver a solicitudes
       </Link>
@@ -123,7 +197,7 @@ export default function RequestDetailPage() {
                       </span>
                     ),
                   },
-                  ...(isAdmin || !isOwner ? [{ label: 'Solicitante', value: <PersonName userId={request.userId} /> }] : []),
+                  ...(isAdmin || !isOwner ? [{ label: 'Solicitante', value: <RequesterName requestId={request.collectRequestId} /> }] : []),
                   ...(request.observations ? [{ label: 'Indicaciones', value: request.observations }] : []),
                 ]}
               />
@@ -214,8 +288,6 @@ export default function RequestDetailPage() {
               {canTake && (
                 <TakeButton
                   requestId={request.collectRequestId}
-                  gatherer={ownGatherer}
-                  userId={user.userId}
                 />
               )}
               {isServiceGatherer && service.statusId === 'Assigned' && (
@@ -290,6 +362,8 @@ export default function RequestDetailPage() {
             </Card>
           )}
 
+          {(isOwner || isAdmin) && request.statusId === 'Pending' && <CompatibleGatherers requestId={id} />}
+          {(isOwner || isAdmin) && <PickupApplications requestId={id} pending={request.statusId === 'Pending'} />}
           <Card>
             <CardHeader title="Historial" />
             <div className="p-5">
@@ -307,7 +381,7 @@ export default function RequestDetailPage() {
         onConfirm={async (reason) => {
           try {
             // An active service must be released first; the backend then returns the request to Pending.
-            if (service && serviceActive) await cancelService.mutateAsync({ serviceId: service.pickupServiceId, reason })
+            if (isAdmin && service && serviceActive) await cancelService.mutateAsync({ serviceId: service.pickupServiceId, reason })
             await cancelRequest.mutateAsync(reason)
             toast.success('Solicitud cancelada.')
             setDialog(null)
@@ -333,7 +407,7 @@ export default function RequestDetailPage() {
           }
         }}
       />
-      <AssignDialog open={dialog === 'assign'} onClose={() => setDialog(null)} requestId={request.collectRequestId} adminId={user.userId} />
+      {isAdmin && <AssignDialog open={dialog === 'assign'} onClose={() => setDialog(null)} requestId={request.collectRequestId} adminId={user.userId} />}
       {service && (
         <MaterialDialog open={dialog === 'material'} onClose={() => setDialog(null)} serviceId={service.pickupServiceId} />
       )}
@@ -343,13 +417,14 @@ export default function RequestDetailPage() {
 }
 
 function GathererSummary({ gathererId }: { gathererId: number }) {
-  const gatherers = useGatherers()
-  const gatherer = gatherers.data?.find((item) => item.gathererId === gathererId)
+  const { user, gatherer: own } = useAuth()
+  const gatherers = useGatherers(user?.roleId !== 'Gatherer')
+  const gatherer = own?.gathererId === gathererId ? own : gatherers.data?.find((item) => item.gathererId === gathererId)
   if (!gatherer) return <p className="font-semibold">Recolector #{gathererId}</p>
   return (
     <>
       <p className="font-semibold">
-        <PersonName userId={gatherer.userId} />
+        {gatherer.firstName && gatherer.lastName ? fullName({ firstName: gatherer.firstName, lastName: gatherer.lastName }) : `Recolector #${gathererId}`}
       </p>
       <p className="text-sm text-muted">
         {labels.gathererType[gatherer.gathererTypeId]}
@@ -359,24 +434,28 @@ function GathererSummary({ gathererId }: { gathererId: number }) {
   )
 }
 
-function TakeButton({ requestId, gatherer, userId }: { requestId: number; gatherer: Gatherer; userId: number }) {
+function TakeButton({ requestId }: { requestId: number }) {
   const toast = useToast()
+  const applicationsKey = ['gatherer', 'my-applications'] as const
+  const applications = useQuery({
+    queryKey: applicationsKey,
+    queryFn: () => apiRequest<(PickupApplication & { collectRequestId: number })[]>('Gatherer/me/applications'),
+  })
   const mutation = useInvalidatingMutation(() =>
-    pickupServicesApi.create({
-      collectRequestId: requestId,
-      gathererId: gatherer.gathererId,
-      commissionPercentage: DEFAULT_COMMISSION,
-      assignedByUserId: userId,
-    }),
+    apiRequest(`CollectRequest/${requestId}/applications`, { method: 'POST' }),
+    [applicationsKey],
   )
+  if (applications.data?.some((item) => item.collectRequestId === requestId)) {
+    return <Notice>Ya registraste una postulación para este recojo.</Notice>
+  }
   return (
     <Button
       className="w-full"
-      loading={mutation.isPending}
-      onClick={() => mutation.mutate(undefined, { onSuccess: () => toast.success('Tomaste este recojo.'), onError: toast.error })}
+      loading={mutation.isPending || applications.isPending}
+      onClick={() => mutation.mutate(undefined, { onSuccess: () => toast.success('Postulación enviada.'), onError: toast.error })}
     >
       <Truck className="size-4" aria-hidden="true" />
-      Tomar este recojo
+      Postular a este recojo
     </Button>
   )
 }

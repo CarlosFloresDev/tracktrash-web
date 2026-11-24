@@ -1,13 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { labels } from '@/api/enums'
-import { usersApi } from '@/api/endpoints'
+import { gatherersApi, usersApi } from '@/api/endpoints'
+import { useResidueTypes } from '@/api/hooks'
 import { useAuth } from '@/features/auth/auth'
-import { authGateway } from '@/features/auth/gateway'
 import { fullName } from '@/lib/format'
-import { errorMessage, Notice, useToast } from '@/components/ui/feedback'
+import { errorMessage, useToast } from '@/components/ui/feedback'
 import { Badge, Button, Card, CardHeader, TextField } from '@/components/ui/primitives'
 import { DefinitionList, PageHeader, VerificationBadge } from '@/components/ui/widgets'
 
@@ -28,9 +28,16 @@ const passwordSchema = z
 type PasswordValues = z.infer<typeof passwordSchema>
 
 export default function ProfilePage() {
-  const { user, gatherer, organization, setUser } = useAuth()
+  const { user, gatherer, organization, setUser, signOut } = useAuth()
+  const residueTypes = useResidueTypes(Boolean(gatherer))
   const toast = useToast()
   const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [supportedResidueIds, setSupportedResidueIds] = useState<number[]>([])
+  const [savingResidues, setSavingResidues] = useState(false)
+
+  useEffect(() => {
+    setSupportedResidueIds(gatherer?.supportedResidueTypes?.map((item) => item.residueTypeId) ?? [])
+  }, [gatherer])
 
   const profile = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
@@ -59,7 +66,7 @@ export default function ProfilePage() {
                   locationId: user.locationId,
                   isActive: user.isActive,
                 })
-                setUser(await usersApi.byId(user.userId))
+                setUser(await usersApi.me())
                 toast.success('Perfil actualizado.')
               } catch (error) {
                 toast.error(error)
@@ -106,6 +113,43 @@ export default function ProfilePage() {
                     { label: 'Descripción', value: gatherer.description ?? '-' },
                   ]}
                 />
+                <form
+                  className="mt-5 space-y-3 border-t border-line pt-4"
+                  onSubmit={async (event) => {
+                    event.preventDefault()
+                    setSavingResidues(true)
+                    try {
+                      await gatherersApi.setMyResidueTypes(supportedResidueIds)
+                      toast.success('Materiales aceptados actualizados.')
+                    } catch (error) {
+                      toast.error(error)
+                    } finally {
+                      setSavingResidues(false)
+                    }
+                  }}
+                >
+                  <div>
+                    <h3 className="text-sm font-semibold">Materiales que aceptas</h3>
+                    <p className="text-sm text-muted">Solo verás solicitudes cuyos materiales coincidan con tu selección.</p>
+                  </div>
+                  {residueTypes.data?.filter((item) => item.isActive && item.isRecyclable).map((item) => (
+                    <label key={item.residueTypeId} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        className="size-4 accent-leaf-600"
+                        checked={supportedResidueIds.includes(item.residueTypeId)}
+                        onChange={(event) => setSupportedResidueIds((current) => event.target.checked
+                          ? [...current, item.residueTypeId]
+                          : current.filter((id) => id !== item.residueTypeId))}
+                      />
+                      {item.name}
+                    </label>
+                  ))}
+                  {supportedResidueIds.length === 0 && <p role="alert" className="text-sm text-danger-600">Selecciona al menos un material.</p>}
+                  <Button type="submit" loading={savingResidues} disabled={supportedResidueIds.length === 0}>
+                    Guardar materiales
+                  </Button>
+                </form>
               </div>
             </Card>
           )}
@@ -119,15 +163,14 @@ export default function ProfilePage() {
                 try {
                   await usersApi.changePassword(user.userId, { currentPassword: values.currentPassword, newPassword: values.newPassword })
                   password.reset()
+                  signOut()
                   toast.success('Contraseña actualizada.')
                 } catch (error) {
                   setPasswordError(errorMessage(error))
                 }
               })}
             >
-              {!authGateway.verifiesPassword && (
-                <Notice tone="warn">La contraseña se guarda correctamente, pero el servidor aún no la exige para ingresar.</Notice>
-              )}
+
               <TextField label="Contraseña actual" type="password" autoComplete="current-password" error={password.formState.errors.currentPassword?.message} {...password.register('currentPassword')} />
               <TextField label="Nueva contraseña" type="password" autoComplete="new-password" error={password.formState.errors.newPassword?.message} {...password.register('newPassword')} />
               <TextField label="Repite la nueva contraseña" type="password" autoComplete="new-password" error={password.formState.errors.confirm?.message} {...password.register('confirm')} />

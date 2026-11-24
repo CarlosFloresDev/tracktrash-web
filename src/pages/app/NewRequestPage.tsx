@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { LocateFixed, Plus, Trash2 } from 'lucide-react'
 import { labels, measurementUnits } from '@/api/enums'
-import { locationsApi, requestDetailsApi, requestsApi } from '@/api/endpoints'
+import { locationsApi, requestsApi } from '@/api/endpoints'
 import { keys, useLocations, useResidueTypes } from '@/api/hooks'
 import { useAuth } from '@/features/auth/auth'
 import { todayIso } from '@/lib/format'
@@ -83,7 +83,7 @@ export default function NewRequestPage() {
   const watchedItems = useWatch({ control, name: 'items' })
 
   if (!user) return null
-  const activeResidues = residues.data?.filter((item) => item.isActive) ?? []
+  const activeResidues = residues.data?.filter((item) => item.isActive && item.isRecyclable) ?? []
 
   function locate() {
     if (!navigator.geolocation) return toast.error(new Error('Tu navegador no permite obtener la ubicación.'))
@@ -119,34 +119,23 @@ export default function NewRequestPage() {
         })
       }
       const requestId = await requestsApi.create({
-        userId: user!.userId,
         organizationId: organization?.organizationId ?? null,
         locationId,
         scheduledDate: values.scheduledDate,
         scheduledTime: `${values.scheduledTime}:00`,
         observations: values.observations || null,
+        details: values.items.map((item) => ({
+          residueTypeId: Number(item.residueTypeId),
+          estimatedQuantity: item.quantity,
+          unitId: item.unit,
+        })),
       })
-      // The backend has no "create request with items" endpoint, so details are posted one by one.
-      const results = await Promise.allSettled(
-        values.items.map((item) =>
-          requestDetailsApi.create({
-            collectRequestId: requestId,
-            residueTypeId: Number(item.residueTypeId),
-            estimatedQuantity: item.quantity,
-            unitId: item.unit,
-          }),
-        ),
-      )
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: keys.requests }),
         queryClient.invalidateQueries({ queryKey: keys.requestDetails }),
         queryClient.invalidateQueries({ queryKey: keys.locations }),
       ])
-      if (results.some((result) => result.status === 'rejected')) {
-        toast.error(new Error('La solicitud se creó, pero algunos materiales no se pudieron guardar. Revisa el detalle.'))
-      } else {
-        toast.success('Solicitud creada. Te avisaremos cuando un recolector la tome.')
-      }
+      toast.success('Solicitud creada. Podras revisar las postulaciones en el detalle.')
       navigate(`/app/solicitudes/${requestId}`)
     } catch (cause) {
       setSubmitError(errorMessage(cause))

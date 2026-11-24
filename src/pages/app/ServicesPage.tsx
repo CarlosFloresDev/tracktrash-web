@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import clsx from 'clsx'
-import { useAllRequestDetails, useAllRequests, useGathererServices } from '@/api/hooks'
+import { useVisibleRequestDetails, useGathererServices } from '@/api/hooks'
 import { useAuth } from '@/features/auth/auth'
 import { groupDetails, RequestList } from '@/features/requests/RequestList'
 import { EmptyBoxIllustration } from '@/components/brand/Illustrations'
@@ -13,9 +13,8 @@ type Tab = 'active' | 'done'
 export default function ServicesPage() {
   const { gatherer } = useAuth()
   const services = useGathererServices(gatherer?.gathererId)
-  const requests = useAllRequests()
-  const details = useAllRequestDetails()
-  const grouped = useMemo(() => groupDetails(details.data), [details.data])
+  const requests = useVisibleRequestDetails((services.data ?? []).map((item) => item.collectRequestId))
+  const grouped = groupDetails(requests.data.flatMap((item) => item.details))
   const [tab, setTab] = useState<Tab>('active')
 
   if (!gatherer) {
@@ -33,8 +32,10 @@ export default function ServicesPage() {
       <Card>
         <QueryBoundary query={services}>
           {(items) => (
-            <QueryBoundary query={requests}>
-              {(allRequests) => {
+            requests.pending ? <Notice>Cargando solicitudes...</Notice>
+              : requests.error ? <Notice tone="warn">No se pudieron cargar las solicitudes.</Notice>
+              : (() => {
+                const allRequests = requests.data.map((item) => item.request)
                 const done = (status: string) => status === 'Completed' || status === 'Cancelled'
                 const wanted = items.filter((item) => (tab === 'active' ? !done(item.statusId) : done(item.statusId)))
                 const ids = new Set(wanted.map((item) => item.collectRequestId))
@@ -66,8 +67,7 @@ export default function ServicesPage() {
                     )}
                   </>
                 )
-              }}
-            </QueryBoundary>
+              })()
           )}
         </QueryBoundary>
       </Card>

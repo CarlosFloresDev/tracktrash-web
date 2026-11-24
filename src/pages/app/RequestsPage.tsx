@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import clsx from 'clsx'
 import { Plus } from 'lucide-react'
 import { labels, requestStatuses, type RequestStatus } from '@/api/enums'
-import { useAllRequestDetails, useAllRequests, useUserRequests } from '@/api/hooks'
+import { useVisibleRequestDetails, useAllRequests, useUserRequests } from '@/api/hooks'
 import { useAuth } from '@/features/auth/auth'
 import { groupDetails, RequestList } from '@/features/requests/RequestList'
 import { EmptyBoxIllustration } from '@/components/brand/Illustrations'
@@ -16,11 +16,11 @@ export default function RequestsPage() {
   const { user } = useAuth()
   const isAdmin = user?.roleId === 'Admin'
   const mine = useUserRequests(isAdmin ? undefined : user?.userId)
-  const all = useAllRequests()
+  const all = useAllRequests(isAdmin)
   const query = isAdmin ? all : mine
-  const details = useAllRequestDetails()
+  const details = useVisibleRequestDetails((query.data ?? []).map((item) => item.collectRequestId))
   const [filter, setFilter] = useState<Filter>('all')
-  const grouped = useMemo(() => groupDetails(details.data), [details.data])
+  const grouped = useMemo(() => groupDetails(details.data.flatMap((item) => item.details)), [details.data])
 
   return (
     <>

@@ -2,10 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { gatherersApi, organizationsApi } from '@/api/endpoints'
 import type { Gatherer, Organization, User } from '@/api/schemas'
-import { ApiError } from '@/lib/http'
+import { ApiError, refreshSession } from '@/lib/http'
 import { authGateway } from './gateway'
 
-const STORAGE_KEY = 'tracktrash.session'
+import { clearSession, getSession, onSessionEnd } from './session'
 
 interface AuthState {
   user: User | null
@@ -21,16 +21,6 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null)
 
-function readStoredId(): number | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    const id = raw ? Number(raw) : NaN
-    return Number.isInteger(id) ? id : null
-  } catch {
-    return null
-  }
-}
-
 async function optional<T>(load: () => Promise<T>): Promise<T | null> {
   try {
     return await load()
@@ -43,16 +33,15 @@ async function optional<T>(load: () => Promise<T>): Promise<T | null> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const [user, setUserState] = useState<User | null>(null)
-  const [restoring, setRestoring] = useState(() => readStoredId() !== null)
+  const [restoring, setRestoring] = useState(() => getSession() !== null)
 
   useEffect(() => {
-    const storedId = readStoredId()
-    if (storedId === null) return
+    if (!getSession()) return
     let cancelled = false
     authGateway
-      .restore(storedId)
+      .restore()
       .then((restored) => !cancelled && setUserState(restored))
-      .catch(() => localStorage.removeItem(STORAGE_KEY))
+      .catch(() => { if (!cancelled) clearSession() })
       .finally(() => !cancelled && setRestoring(false))
     return () => {
       cancelled = true
@@ -75,16 +64,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     const signedIn = await authGateway.signIn(email, password)
-    localStorage.setItem(STORAGE_KEY, String(signedIn.userId))
+    queryClient.clear()
     setUserState(signedIn)
     return signedIn
-  }, [])
+  }, [queryClient])
 
-  const signOut = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY)
+  useEffect(() => onSessionEnd(() => {
     setUserState(null)
     queryClient.clear()
-  }, [queryClient])
+  }), [queryClient])
+
+  const signOut = useCallback(() => { void authGateway.signOut() }, [])
+
+  useEffect(() => {
+    if (!user) return
+    const renewOnInteraction = () => {
+      const session = getSession()
+      if (session && Date.now() >= session.refreshAt) void refreshSession().catch(() => undefined)
+    }
+    window.addEventListener('pointerdown', renewOnInteraction)
+    window.addEventListener('keydown', renewOnInteraction)
+    return () => {
+      window.removeEventListener('pointerdown', renewOnInteraction)
+      window.removeEventListener('keydown', renewOnInteraction)
+    }
+  }, [user])
 
   const value = useMemo<AuthState>(
     () => ({

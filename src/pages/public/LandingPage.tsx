@@ -1,3 +1,4 @@
+import { useAuth } from '@/features/auth/auth'
 import { Link } from 'react-router-dom'
 import { ArrowRight, CalendarCheck, MapPinned, Scale, ShieldCheck, Sprout, Truck } from 'lucide-react'
 import { useGeneralIndicators, useResidueTypes } from '@/api/hooks'
@@ -49,8 +50,10 @@ const audiences = [
 ]
 
 function ImpactNumbers() {
-  const query = useGeneralIndicators()
-  if (query.isError) return null
+  const { user } = useAuth()
+  const allowed = user?.roleId === 'Admin'
+  const query = useGeneralIndicators(allowed)
+  if (!allowed || query.isError) return null
   const items = query.data
     ? [
         { label: 'kg recuperados', value: query.data.recoveredKilograms },
@@ -82,9 +85,10 @@ function ImpactNumbers() {
 }
 
 function Materials() {
-  const query = useResidueTypes()
+  const { user } = useAuth()
+  const query = useResidueTypes(Boolean(user))
   const recyclable = query.data?.filter((item) => item.isActive).slice(0, 8) ?? []
-  if (query.isError) return null
+  if (!user || query.isError) return null
   return (
     <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {query.isPending

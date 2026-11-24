@@ -7,6 +7,7 @@ import clsx from 'clsx'
 import { Building2, Home, Truck, type LucideIcon } from 'lucide-react'
 import { gathererTypes, labels, organizationTypes, type UserRole } from '@/api/enums'
 import { gatherersApi, locationsApi, organizationsApi, usersApi } from '@/api/endpoints'
+import { authGateway } from '@/features/auth/gateway'
 import { useAuth } from '@/features/auth/auth'
 import { Button, SelectField, TextAreaField, TextField } from '@/components/ui/primitives'
 import { errorMessage } from '@/components/ui/feedback'
@@ -27,7 +28,7 @@ const schema = z
     phone: z.string().max(20, 'Máximo 20 caracteres').optional(),
     password: z.string().min(8, 'Usa al menos 8 caracteres').max(100),
     district: z.string().trim().min(1, 'Indica tu distrito'),
-    address: z.string().trim().min(1, 'Indica tu dirección').max(250),
+    address: z.string().trim().max(250).optional(),
     businessName: z.string().trim().max(180).optional(),
     taxId: z.string().trim().regex(/^(\d{11})?$/, 'El RUC tiene 11 dígitos').optional(),
     organizationType: z.enum(organizationTypes).optional(),
@@ -36,6 +37,9 @@ const schema = z
     verificationDocument: z.string().trim().max(50).optional(),
   })
   .superRefine((values, ctx) => {
+    if (values.role !== 'Gatherer' && !values.address) {
+      ctx.addIssue({ code: 'custom', path: ['address'], message: 'Ingresa tu dirección' })
+    }
     if (values.role === 'Organization' && !values.businessName) {
       ctx.addIssue({ code: 'custom', path: ['businessName'], message: 'Ingresa la razón social' })
     }
@@ -67,12 +71,6 @@ export function RegisterPage() {
   async function onSubmit(values: FormValues) {
     setError(null)
     try {
-      const locationId = await locationsApi.create({
-        address: values.address,
-        district: values.district,
-        province: 'Arequipa',
-        department: 'Arequipa',
-      })
       const userId = await usersApi.create({
         firstName: values.firstName,
         lastName: values.lastName,
@@ -80,7 +78,17 @@ export function RegisterPage() {
         phone: values.phone || null,
         password: values.password,
         roleId: values.role,
-        locationId,
+      })
+      const account = await authGateway.signIn(values.email, values.password)
+      const locationId = values.role === 'Gatherer' ? null : await locationsApi.create({
+        address: values.address!,
+        district: values.district,
+        province: 'Arequipa',
+        department: 'Arequipa',
+      })
+      await usersApi.update(userId, {
+        firstName: account.firstName, lastName: account.lastName, phone: account.phone,
+        roleId: account.roleId, isActive: account.isActive, locationId,
       })
       if (values.role === 'Organization') {
         await organizationsApi.create({
@@ -100,8 +108,10 @@ export function RegisterPage() {
           verificationDocument: values.verificationDocument || null,
         })
       }
+      await authGateway.signOut()
       navigate('/ingresar', { replace: true, state: { registered: true } })
     } catch (cause) {
+      await authGateway.signOut()
       setError(errorMessage(cause))
     }
   }
@@ -147,12 +157,14 @@ export function RegisterPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
+          {role !== 'Gatherer' && (<>
           <SelectField label="Distrito" error={errors.district?.message} {...register('district')}>
             {districts.map((district) => (
               <option key={district}>{district}</option>
             ))}
           </SelectField>
           <TextField label="Dirección" autoComplete="street-address" error={errors.address?.message} {...register('address')} />
+          </>)}
         </div>
 
         {role === 'Organization' && (

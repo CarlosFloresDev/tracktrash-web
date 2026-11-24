@@ -43,6 +43,7 @@ const patch = (path: string, body: unknown) => request<number>(path, { method: '
 const remove = (path: string) => request<void>(path, { method: 'DELETE' })
 
 export const usersApi = {
+  me: () => get('User/me', userSchema),
   list: () => get('User', list(userSchema)),
   byId: (id: number) => get(`User/${id}`, userSchema),
   byEmail: (email: string) => get(`User/email/${encodeURIComponent(email)}`, userSchema),
@@ -54,7 +55,7 @@ export const usersApi = {
     password: string
     roleId: UserRole
     locationId?: number | null
-  }) => create('User', body),
+  }) => request<number>('User', { method: 'POST', body, anonymous: true }),
   update: (
     id: number,
     body: { firstName: string; lastName: string; phone?: string | null; roleId: UserRole; locationId?: number | null; isActive: boolean },
@@ -84,12 +85,12 @@ export const requestsApi = {
   byUser: (userId: number) => get(`CollectRequest/user/${userId}`, list(collectRequestSchema)),
   full: (id: number) => get(`CollectRequest/${id}/full`, collectRequestDetailSchema),
   create: (body: {
-    userId: number
     organizationId?: number | null
     locationId: number
     scheduledDate: string
     scheduledTime: string
     observations?: string | null
+    details: { residueTypeId: number; estimatedQuantity: number; unitId: MeasurementUnit }[]
   }) => create('CollectRequest', body),
   update: (
     id: number,
@@ -146,12 +147,16 @@ export const gradesApi = {
     get(`Grade/pickup-service/${serviceId}/user/${userId}`, gradeSchema),
   create: (body: { pickupServiceId: number; userId: number; score: number; comment?: string | null }) =>
     create('Grade', body),
+  byId: (id: number) => get(`Grade/${id}`, gradeSchema),
+  byGatherer: (id: number) => get(`GathererGrade/gatherer/${id}`, list(gathererGradeSchema)),
   gathererGrades: () => get('GathererGrade', list(gathererGradeSchema)),
 }
 
 export const gatherersApi = {
   list: () => get('Gatherer', list(gathererSchema)),
   byUser: (userId: number) => get(`Gatherer/user/${userId}`, gathererSchema),
+  availableForCollectRequest: (requestId: number) =>
+    get(`Gatherer/available/collect-request/${requestId}`, list(gathererSchema)),
   create: (body: { userId: number; gathererTypeId: GathererType; description?: string | null; verificationDocument?: string | null }) =>
     create('Gatherer', body),
   update: (
@@ -164,6 +169,8 @@ export const gatherersApi = {
       isActive: boolean
     },
   ) => update(`Gatherer/${id}`, body),
+  setMyResidueTypes: (residueTypeIds: number[]) =>
+    request<void>('Gatherer/me/residue-types', { method: 'PUT', body: { residueTypeIds } }),
 }
 
 export const organizationsApi = {

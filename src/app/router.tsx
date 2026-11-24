@@ -26,11 +26,11 @@ function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<ListSkeleton />}>{children}</Suspense>
 }
 
-function RequireAuth() {
+function RequireAuth({ shell = true }: { shell?: boolean }) {
   const { user, loading } = useAuth()
   if (loading) return <div className="grid min-h-screen place-items-center"><ListSkeleton rows={2} /></div>
   if (!user) return <Navigate to="/ingresar" replace />
-  return <AppShell />
+  return shell ? <AppShell /> : <Outlet />
 }
 
 function RequireRole({ roles }: { roles: readonly UserRole[] }) {
@@ -44,7 +44,9 @@ export const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { index: true, element: <LandingPage /> },
-      { path: 'puntos', element: <Lazy><CollectionPointsPage /></Lazy> },
+      { element: <RequireAuth shell={false} />, children: [
+        { path: 'puntos', element: <Lazy><CollectionPointsPage /></Lazy> },
+      ] },
       { path: 'ingresar', element: <LoginPage /> },
       { path: 'registro', element: <RegisterPage /> },
     ],

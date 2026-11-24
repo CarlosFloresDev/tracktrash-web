@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { useAllRequestDetails, usePendingRequests } from '@/api/hooks'
+import { useAuth } from '@/features/auth/auth'
+import { useVisibleRequestDetails, usePendingRequests } from '@/api/hooks'
 import { groupDetails, RequestList } from '@/features/requests/RequestList'
 import { EmptyBoxIllustration } from '@/components/brand/Illustrations'
 import { EmptyState } from '@/components/ui/feedback'
@@ -7,9 +7,14 @@ import { Card } from '@/components/ui/primitives'
 import { PageHeader, QueryBoundary } from '@/components/ui/widgets'
 
 export default function AvailablePage() {
-  const pending = usePendingRequests()
-  const details = useAllRequestDetails()
-  const grouped = useMemo(() => groupDetails(details.data), [details.data])
+  const { gatherer } = useAuth()
+  const pending = usePendingRequests(gatherer?.verificationStatusId === 'Verified')
+  const details = useVisibleRequestDetails((pending.data ?? []).map((item) => item.collectRequestId))
+  const grouped = groupDetails(details.data.flatMap((item) => item.details))
+
+  if (gatherer?.verificationStatusId !== 'Verified') {
+    return <PageHeader title="Recojos disponibles" description="Necesitas un perfil de recolector verificado para ver los recojos." />
+  }
 
   return (
     <>

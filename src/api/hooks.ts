@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query'
 import { ApiError } from '@/lib/http'
 import {
   collectionPointsApi,
@@ -45,16 +45,16 @@ const defaults = { retry: noRetryOnClientError }
 
 export const useUsers = (enabled = true) => useQuery({ queryKey: keys.users, queryFn: usersApi.list, enabled, ...defaults })
 export const useLocations = () => useQuery({ queryKey: keys.locations, queryFn: locationsApi.list, ...defaults })
-export const useResidueTypes = () =>
-  useQuery({ queryKey: keys.residueTypes, queryFn: residueTypesApi.list, staleTime: 5 * 60_000, ...defaults })
+export const useResidueTypes = (enabled = true) =>
+  useQuery({ queryKey: keys.residueTypes, queryFn: residueTypesApi.list, enabled, staleTime: 5 * 60_000, ...defaults })
 export const useCollectionPoints = () =>
   useQuery({ queryKey: keys.collectionPoints, queryFn: collectionPointsApi.list, staleTime: 60_000, ...defaults })
-export const useGatherers = () => useQuery({ queryKey: keys.gatherers, queryFn: gatherersApi.list, ...defaults })
+export const useGatherers = (enabled = true) => useQuery({ queryKey: keys.gatherers, queryFn: gatherersApi.list, enabled, ...defaults })
 export const useOrganizations = () => useQuery({ queryKey: keys.organizations, queryFn: organizationsApi.list, ...defaults })
 
-export const useAllRequests = () => useQuery({ queryKey: keys.requests, queryFn: requestsApi.list, ...defaults })
-export const usePendingRequests = () =>
-  useQuery({ queryKey: keys.pendingRequests, queryFn: requestsApi.pending, ...defaults })
+export const useAllRequests = (enabled = true) => useQuery({ queryKey: keys.requests, queryFn: requestsApi.list, enabled, ...defaults })
+export const usePendingRequests = (enabled = true) =>
+  useQuery({ queryKey: keys.pendingRequests, queryFn: requestsApi.pending, enabled, ...defaults })
 export const useUserRequests = (userId: number | undefined) =>
   useQuery({
     queryKey: keys.userRequests(userId ?? 0),
@@ -107,8 +107,8 @@ export const useGrades = () => useQuery({ queryKey: keys.grades, queryFn: grades
 export const useGathererGrades = () =>
   useQuery({ queryKey: keys.gathererGrades, queryFn: gradesApi.gathererGrades, ...defaults })
 
-export const useGeneralIndicators = () =>
-  useQuery({ queryKey: [...keys.indicators, 'general'], queryFn: indicatorsApi.general, ...defaults })
+export const useGeneralIndicators = (enabled = true) =>
+  useQuery({ queryKey: [...keys.indicators, 'general'], queryFn: indicatorsApi.general, enabled, ...defaults })
 export const useResiduesByType = () =>
   useQuery({ queryKey: [...keys.indicators, 'residues'], queryFn: indicatorsApi.residuesByType, ...defaults })
 export const useGathererRatings = () =>
@@ -128,5 +128,38 @@ export function useInvalidatingMutation<TVariables, TResult>(
     onSuccess: async () => {
       await Promise.all(invalidate.map((queryKey) => queryClient.invalidateQueries({ queryKey })))
     },
+  })
+}
+
+export const useVisibleRequestDetails = (ids: readonly number[]) =>
+  useQueries({
+    queries: [...new Set(ids)].map((id) => ({
+      queryKey: keys.request(id), queryFn: () => requestsApi.full(id), ...defaults,
+    })),
+    combine: (results) => ({
+      data: results.flatMap((result) => result.data ? [result.data] : []),
+      pending: results.some((result) => result.isPending),
+      error: results.find((result) => result.isError)?.error,
+    }),
+  })
+
+export const useVisibleMaterials = (ids: readonly number[]) =>
+  useQueries({
+    queries: [...new Set(ids)].map((id) => ({
+      queryKey: keys.materials(id), queryFn: () => recoveredMaterialsApi.byService(id), ...defaults,
+    })),
+    combine: (results) => results.flatMap((result) => result.data ?? []),
+  })
+
+export function useOwnGathererGrades(id: number | undefined) {
+  const links = useQuery({
+    queryKey: [...keys.gathererGrades, id], enabled: id !== undefined,
+    queryFn: () => gradesApi.byGatherer(id!), ...defaults,
+  })
+  return useQueries({
+    queries: (links.data ?? []).map(({ gradeId }) => ({
+      queryKey: [...keys.grades, gradeId], queryFn: () => gradesApi.byId(gradeId), ...defaults,
+    })),
+    combine: (results) => results.flatMap((result) => result.data ? [result.data] : []),
   })
 }

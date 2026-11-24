@@ -1,38 +1,36 @@
 import { usersApi } from '@/api/endpoints'
-import { ApiError } from '@/lib/http'
-import type { User } from '@/api/schemas'
+import { ApiError, request } from '@/lib/http'
+import { clearSession, getSession, saveSession, tokensSchema } from './session'
 
-/**
- * The backend does not expose authentication yet: there is no login endpoint and no token validation.
- * Everything that talks about "signing in" goes through this gateway, so adopting a real
- * `POST /api/Auth/login` later only means providing another implementation.
- */
-export interface AuthGateway {
-  readonly verifiesPassword: boolean
-  signIn(email: string, password: string): Promise<User>
-  restore(userId: number): Promise<User>
-}
-
-/** Provisional: resolves the account by e-mail. The password is NOT verified by the backend. */
-export const provisionalGateway: AuthGateway = {
-  verifiesPassword: false,
-  async signIn(email) {
+export const authGateway = {
+  async signIn(email: string, password: string) {
+    let payload: unknown
     try {
-      const user = await usersApi.byEmail(email.trim().toLowerCase())
-      if (!user.isActive) throw new ApiError('Esta cuenta esta desactivada.', 403)
-      return user
+      payload = await request('Auth/Login', {
+        method: 'POST', body: { email: email.trim().toLowerCase(), password }, anonymous: true,
+      })
     } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
-        throw new ApiError('No encontramos una cuenta con ese correo.', 404)
+      if (error instanceof ApiError && error.status === 401) {
+        throw new ApiError('Correo o contrasena incorrectos, o cuenta desactivada.', 401)
       }
       throw error
     }
+    saveSession(tokensSchema.parse(payload))
+    try {
+      return await usersApi.me()
+    } catch (error) {
+      await this.signOut()
+      throw error
+    }
   },
-  async restore(userId) {
-    const user = await usersApi.byId(userId)
-    if (!user.isActive) throw new ApiError('Esta cuenta esta desactivada.', 403)
-    return user
+  restore: () => usersApi.me(),
+  async signOut() {
+    const session = getSession()
+    clearSession()
+    if (session) {
+      await request('Auth/Logout', {
+        method: 'POST', body: { refreshToken: session.refreshToken }, anonymous: true,
+      }).catch(() => undefined)
+    }
   },
 }
-
-export const authGateway: AuthGateway = provisionalGateway

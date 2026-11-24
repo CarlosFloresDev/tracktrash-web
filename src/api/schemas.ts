@@ -89,17 +89,6 @@ export const requestHistorySchema = z.object({
   createdAt: date,
 })
 
-export const gathererSchema = z.object({
-  gathererId: id,
-  userId: id,
-  gathererTypeId: z.enum(gathererTypes),
-  description: z.string().nullable(),
-  verificationDocument: z.string().nullable(),
-  verificationStatusId: z.enum(verificationStatuses),
-  isActive: z.boolean(),
-  createdAt: date,
-})
-
 export const organizationSchema = z.object({
   organizationId: id,
   userId: id,
@@ -121,6 +110,20 @@ export const residueTypeSchema = z.object({
   classificationInstructions: z.string().nullable(),
   isActive: z.boolean(),
   createdAt: date,
+})
+
+export const gathererSchema = z.object({
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  gathererId: id,
+  userId: id,
+  gathererTypeId: z.enum(gathererTypes),
+  description: z.string().nullable(),
+  verificationDocument: z.string().nullable(),
+  verificationStatusId: z.enum(verificationStatuses),
+  isActive: z.boolean(),
+  createdAt: date,
+  supportedResidueTypes: z.array(residueTypeSchema).optional(),
 })
 
 export const collectionPointSchema = z.object({
