@@ -34,10 +34,11 @@ del backend en ASP.NET Core y comparte el contrato con la [app móvil en Flutter
 
 | Rol | Qué puede hacer |
 | --- | --- |
-| Visitante | Landing con indicadores en vivo, catálogo de materiales y mapa de puntos de acopio |
-| Hogar y organización | Crear solicitudes con varios materiales, dirección con GPS, seguimiento por estados, historial, cancelar y calificar |
-| Recolector | Recojos disponibles, tomar, iniciar, registrar material recuperado, finalizar o soltar; kilos y calificación propios |
-| Administrador | Indicadores con gráficos, todas las solicitudes, asignación de recolectores, verificación de documentos, usuarios y catálogo |
+| Visitante | Landing, catálogo de materiales y mapa de puntos de acopio |
+| Hogar y organización | Crear solicitudes con varios materiales y dirección con GPS, ver recolectores compatibles, aceptar o rechazar postulaciones, seguir estados e historial, cancelar y calificar |
+| Recolector | Elegir los materiales que acepta, ver recojos compatibles y postularse, iniciar, registrar material recuperado, finalizar o soltar; kilos y calificación propios |
+| Administrador | Indicadores con gráficos, todas las solicitudes, asignación directa, verificación de documentos, usuarios y catálogo |
+| Todos | Inicio de sesión con JWT: el token se renueva solo mientras hay actividad y se revoca al salir |
 
 Detalles de experiencia: animaciones al hacer scroll, contadores animados, transiciones entre páginas, estados de carga,
 vacío y error en todas las vistas, y soporte para "reducir movimiento" del sistema operativo.
@@ -75,9 +76,10 @@ flowchart LR
     Pages["pages/ por rol"] --> Hooks["api/hooks (TanStack Query)"]
     Hooks --> Endpoints["api/endpoints"]
     Endpoints --> Zod["Validación con Zod"]
-    Pages --> Auth["features/auth (AuthGateway)"]
+    Pages --> Auth["features/auth (sesión JWT)"]
+    Endpoints --> Http["lib/http (Bearer + refresh)"]
   end
-  Zod -->|HTTP JSON| API["API ASP.NET Core"]
+  Http -->|HTTP JSON| API["API ASP.NET Core"]
   API --> DB[("PostgreSQL")]
 ```
 
@@ -86,7 +88,7 @@ src/
   api/          contrato del backend: enums, esquemas Zod, endpoints tipados y hooks
   app/          router con carga diferida por página y proveedores
   components/   brand (logo e ilustraciones SVG), layout, ui (kit propio), map
-  features/     auth (gateway reemplazable) y requests (listas y cruces de datos)
+  features/     auth (login, sesión y renovación de tokens) y requests (listas y cruces de datos)
   lib/          cliente HTTP, formato es-PE, variables de entorno
   pages/        public/ y app/
 local-dev/      vistas SQL locales, datos de ejemplo y scripts de base local
@@ -96,8 +98,10 @@ docs/           hallazgos del backend y recursos del README
 Decisiones de diseño:
 
 * **Contrato validado:** cada respuesta pasa por un esquema Zod; si el backend cambia, el error aparece de inmediato.
-* **Acceso aislado:** `AuthGateway` encapsula el inicio de sesión. Cuando el backend publique `POST /api/Auth/login`
-  solo cambia ese archivo (ver [hallazgos del backend](docs/HALLAZGOS_BACKEND.md)).
+* **Sesión JWT:** `features/auth` hace login, guarda el par de tokens y `lib/http` agrega el `Bearer`. Un
+  `401 ACCESS_TOKEN_EXPIRED` dispara una sola renovación compartida y reintenta; el logout revoca el refresh token.
+* **Permisos por rol:** cada vista solo consulta endpoints permitidos para su rol (ver
+  [hallazgos del backend](docs/HALLAZGOS_BACKEND.md)).
 * **Reglas espejo:** las transiciones de estado replican `CollectRequestStatusRules` para mostrar solo acciones válidas.
 * **Rendimiento:** páginas con `lazy`, gráficos y mapa en chunks separados, imágenes en WebP.
 
@@ -110,17 +114,21 @@ Requisitos: Node 22+, .NET SDK 10 y PostgreSQL 15+.
 local-dev/start-db.cmd
 psql -h localhost -p 54329 -U postgres -c "create database tracktrash_db"
 psql -h localhost -p 54329 -U postgres -d tracktrash_db -f <backend>/database/01_schema.sql
-psql -h localhost -p 54329 -U postgres -d tracktrash_db -f local-dev/01_views.sql
+psql -h localhost -p 54329 -U postgres -d tracktrash_db -f <backend>/database/03_add_auth_and_applications.sql
+psql -h localhost -p 54329 -U postgres -d tracktrash_db -f <backend>/database/04_seed_residue_types.sql
+psql -h localhost -p 54329 -U postgres -d tracktrash_db -f local-dev/01_views.sql   # vistas de indicadores
 
 # 2. API (desde una copia del backend; su repositorio no se modifica)
-local-dev/run-api.cmd            # http://localhost:5145
-node local-dev/seed.mjs          # datos de ejemplo
+local-dev/run-api.cmd            # http://localhost:5145 (define Jwt__Key)
+node local-dev/seed.mjs          # datos de ejemplo: inicia sesión con cada cuenta como lo haría la app
 
 # 3. Web
 cp .env.example .env.local
 npm install
 npm run dev
 ```
+
+El backend no crea administradores por API: `seed.mjs` registra al administrador y lo promueve con `psql`.
 
 Cuentas de ejemplo (contraseña `TrackTrash2026!`):
 
