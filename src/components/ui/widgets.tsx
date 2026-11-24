@@ -51,8 +51,8 @@ export function StatCard({
     lime: 'bg-lime-300 text-pine-900',
   }[tone]
   return (
-    <Card className="card-lift group relative overflow-hidden p-5">
-      <div aria-hidden="true" className="absolute -right-8 -top-8 size-24 rounded-full bg-leaf-50 transition-transform duration-500 group-hover:scale-[1.8]" />
+    <Card className="relative overflow-hidden p-5">
+      <div aria-hidden="true" className="absolute -right-8 -top-8 size-24 rounded-full bg-leaf-50" />
       <div className="relative flex items-center gap-3">
         <span className={clsx('grid size-11 place-items-center rounded-xl [&>svg]:size-5', toneClass)}>{icon}</span>
         <p className="text-sm font-medium text-muted">{label}</p>

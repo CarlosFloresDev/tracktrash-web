@@ -1,12 +1,10 @@
-import { useEffect, useRef, useState, type ElementType, type ReactNode } from 'react'
-import clsx from 'clsx'
+import { useEffect, useState, type ElementType, type ReactNode } from 'react'
 
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 
-/** Fades its children in the first time they scroll into view. */
+/** Groups landing content. Content is always visible: nothing waits for scroll to appear. */
 export function Reveal({
   children,
-  delay = 0,
   className,
   as: Tag = 'div',
 }: {
@@ -15,33 +13,7 @@ export function Reveal({
   className?: string
   as?: ElementType
 }) {
-  const ref = useRef<HTMLElement>(null)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const node = ref.current
-    if (!node || typeof IntersectionObserver === 'undefined') {
-      setVisible(true)
-      return
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true)
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.15, rootMargin: '0px 0px -40px 0px' },
-    )
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [])
-
-  return (
-    <Tag ref={ref} className={clsx('reveal', visible && 'is-visible', className)} style={{ '--reveal-delay': `${delay}ms` }}>
-      {children}
-    </Tag>
-  )
+  return <Tag className={className}>{children}</Tag>
 }
 
 /** Counts from zero up to `value` with an ease-out curve. */

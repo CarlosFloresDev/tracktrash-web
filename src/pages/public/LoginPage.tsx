@@ -16,8 +16,8 @@ type FormValues = z.infer<typeof schema>
 
 export function AuthFrame({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-12 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_1.1fr]">
-      <div className="hidden lg:block">
+    <div className="mx-auto grid max-w-6xl items-start gap-12 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_1.1fr] lg:py-16">
+      <div className="sticky top-24 hidden lg:block">
         <img src="/mascot.webp" alt="" width="900" height="900" className="mx-auto w-full max-w-md" />
         <p className="mx-auto mt-2 max-w-sm text-center text-muted">
           Cada kilo cuenta. Coordina tus recojos y mide lo que recuperamos juntos.
