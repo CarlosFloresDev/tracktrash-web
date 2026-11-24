@@ -39,3 +39,30 @@ describe('request', () => {
     await expect(request('User')).rejects.toMatchObject({ status: 0 })
   })
 })
+
+describe('session handling on 401', () => {
+  const tokens = {
+    accessToken: 'access', refreshToken: 'refresh', tokenType: 'Bearer' as const,
+    expiresAt: new Date(Date.now() + 3_600_000).toISOString(), expiresIn: 3600, refreshAfterSeconds: 1800,
+  }
+
+  it('keeps the session when a 401 explains a business rule', async () => {
+    const { saveSession, getSession, clearSession } = await import('@/features/auth/session')
+    saveSession(tokens)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: 'Only active, verified gatherers can apply.' }), { status: 401 }),
+    ))
+    await expect(request('CollectRequest/1/applications', { method: 'POST' }))
+      .rejects.toMatchObject({ status: 401, business: true, message: 'Only active, verified gatherers can apply.' })
+    expect(getSession()?.accessToken).toBe('access')
+    clearSession()
+  })
+
+  it('ends the session when the token is rejected', async () => {
+    const { saveSession, getSession } = await import('@/features/auth/session')
+    saveSession(tokens)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 401 })))
+    await expect(request('User/me')).rejects.toMatchObject({ status: 401 })
+    expect(getSession()).toBeNull()
+  })
+})

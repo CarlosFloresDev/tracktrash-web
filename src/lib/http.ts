@@ -5,13 +5,16 @@ export class ApiError extends Error {
   readonly status: number
   readonly code?: string
   readonly fieldErrors: Record<string, string[]>
+  /** True when the server explained the refusal (`{ error }` without `code`): a business rule, not a dead session. */
+  readonly business: boolean
 
-  constructor(message: string, status: number, fieldErrors: Record<string, string[]> = {}, code?: string) {
+  constructor(message: string, status: number, fieldErrors: Record<string, string[]> = {}, code?: string, business = false) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.code = code
     this.fieldErrors = fieldErrors
+    this.business = business
   }
 }
 
@@ -39,7 +42,7 @@ export async function toApiError(response: Response): Promise<ApiError> {
       return new ApiError(messages.join(' ') || 'Datos invalidos.', response.status, data.errors)
     }
     if (typeof data.error === 'string' && response.status < 500) {
-      return new ApiError(data.error, response.status, {}, data.code)
+      return new ApiError(data.error, response.status, {}, data.code, data.code === undefined)
     }
   }
   return new ApiError(statusMessages[response.status] ?? 'No pudimos completar la operacion.', response.status)
@@ -106,14 +109,14 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   try {
     return await send<T>(path, options, sent.accessToken)
   } catch (error) {
-    if (!(error instanceof ApiError) || error.status !== 401) throw error
+    if (!(error instanceof ApiError) || error.status !== 401 || error.business) throw error
     const latest = requireSession()
     if (latest !== sent || error.code === 'ACCESS_TOKEN_EXPIRED') {
       if (latest === sent) await refreshSession()
       try {
         return await send<T>(path, options, requireSession().accessToken)
       } catch (retryError) {
-        if (retryError instanceof ApiError && retryError.status === 401 && getSessionEpoch() === epoch) clearSession()
+        if (retryError instanceof ApiError && retryError.status === 401 && !retryError.business && getSessionEpoch() === epoch) clearSession()
         throw retryError
       }
     }
