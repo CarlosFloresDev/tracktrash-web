@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -32,12 +32,11 @@ export default function ProfilePage() {
   const residueTypes = useResidueTypes(Boolean(gatherer))
   const toast = useToast()
   const [passwordError, setPasswordError] = useState<string | null>(null)
-  const [supportedResidueIds, setSupportedResidueIds] = useState<number[]>([])
+  // Only the user's edits live in state; until then the selection mirrors the saved profile.
+  const [editedResidueIds, setEditedResidueIds] = useState<number[] | null>(null)
+  const supportedResidueIds =
+    editedResidueIds ?? gatherer?.supportedResidueTypes?.map((item) => item.residueTypeId) ?? []
   const [savingResidues, setSavingResidues] = useState(false)
-
-  useEffect(() => {
-    setSupportedResidueIds(gatherer?.supportedResidueTypes?.map((item) => item.residueTypeId) ?? [])
-  }, [gatherer])
 
   const profile = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
@@ -138,9 +137,9 @@ export default function ProfilePage() {
                         type="checkbox"
                         className="size-4 accent-leaf-600"
                         checked={supportedResidueIds.includes(item.residueTypeId)}
-                        onChange={(event) => setSupportedResidueIds((current) => event.target.checked
-                          ? [...current, item.residueTypeId]
-                          : current.filter((id) => id !== item.residueTypeId))}
+                        onChange={(event) => setEditedResidueIds(event.target.checked
+                          ? [...supportedResidueIds, item.residueTypeId]
+                          : supportedResidueIds.filter((id) => id !== item.residueTypeId))}
                       />
                       {item.name}
                     </label>
