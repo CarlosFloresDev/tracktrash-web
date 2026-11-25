@@ -180,8 +180,8 @@ export function LandingPage() {
   return (
     <>
       <section className="relative isolate overflow-hidden bg-paper">
-        <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-24 -z-10 size-[28rem] animate-sway rounded-full bg-lime-300/40 blur-3xl" />
-        <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-10 -z-10 size-[24rem] animate-sway rounded-full bg-leaf-400/25 blur-3xl [animation-delay:-9s]" />
+        <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-24 -z-10 size-[28rem] rounded-full bg-lime-300/40 blur-3xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-10 -z-10 size-[24rem] rounded-full bg-leaf-400/25 blur-3xl" />
         <CloudBand className="top-8 h-28 opacity-90 animate-clouds-slow" />
         <CloudBand className="top-44 h-20 opacity-75 animate-clouds-fast" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
@@ -198,7 +198,7 @@ export function LandingPage() {
             </svg>
           ))}
         </div>
-        <div className="absolute inset-x-0 bottom-0 -z-10 h-[26rem] opacity-90 sm:h-[30rem]">
+        <div className="absolute inset-x-0 bottom-0 -z-10 h-[26rem] opacity-90 [mask-image:linear-gradient(to_bottom,transparent,black_35%)] sm:h-[34rem]">
           <SkylineScene className="size-full" />
         </div>
         <div className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-6xl items-center gap-8 px-4 pb-32 pt-12 sm:px-6 md:grid-cols-[1.15fr_1fr] md:pb-44 md:pt-10">
