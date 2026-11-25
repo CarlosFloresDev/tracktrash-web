@@ -44,6 +44,7 @@ del backend en ASP.NET Core y comparte el contrato con la [app móvil en Flutter
 | Recolector | Elegir los materiales que acepta, ver recojos compatibles y postularse, iniciar, registrar material recuperado, finalizar o soltar; kilos y calificación propios |
 | Administrador | Indicadores con gráficos, todas las solicitudes, asignación directa, verificación de documentos, usuarios y catálogo |
 | Todos | Inicio de sesión con JWT: el token se renueva solo mientras hay actividad y se revoca al salir |
+| Búsqueda y filtros | Buscador sin distinguir tildes ni mayúsculas, con filtros por estado, material, distrito, rol, verificación y categoría, en solicitudes, recolectores, usuarios, catálogo y puntos de acopio (el mapa se filtra junto con la lista) |
 
 Detalles de experiencia: animaciones al hacer scroll, contadores animados, transiciones entre páginas, estados de carga,
 vacío y error en todas las vistas, y soporte para "reducir movimiento" del sistema operativo.
@@ -109,6 +110,8 @@ Decisiones de diseño:
   [hallazgos del backend](docs/HALLAZGOS_BACKEND.md)).
 * **Reglas espejo:** las transiciones de estado replican `CollectRequestStatusRules` para mostrar solo acciones válidas.
 * **Rendimiento:** páginas con `lazy`, gráficos y mapa en chunks separados, imágenes en WebP.
+* **Fotos con licencia libre:** las fotos de materiales vienen de Wikimedia Commons; autor y licencia se listan en `/creditos`
+  (datos en `src/content/imageCredits.json`).
 
 ## Ejecutar en local
 
