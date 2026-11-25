@@ -8,6 +8,7 @@ import { useLookups } from '@/features/requests/lookups'
 import { formatDateOnly, fullName } from '@/lib/format'
 import { FilterBar, FilterSelect, FilterSummary, matchesQuery, SearchInput } from '@/components/ui/filters'
 import { EmptyState, useToast } from '@/components/ui/feedback'
+import { Pagination, usePagination } from '@/components/ui/pagination'
 import { Badge, Button, Card } from '@/components/ui/primitives'
 import { PageHeader, QueryBoundary, Rating, Table, VerificationBadge } from '@/components/ui/widgets'
 
@@ -31,6 +32,11 @@ export default function GatherersPage() {
       }),
     [gatherers.data, userById, search, verification, type],
   )
+  const sorted = useMemo(
+    () => filtered.toSorted((a, b) => a.verificationStatusId.localeCompare(b.verificationStatusId) || b.gathererId - a.gathererId),
+    [filtered],
+  )
+  const paging = usePagination(sorted, `${search}|${verification}|${type}`)
   const filtersActive = Boolean(search || verification || type)
   const resetFilters = () => {
     setSearch('')
@@ -93,9 +99,7 @@ export default function GatherersPage() {
                 />
               ) : (
                 <Table head={['Recolector', 'Tipo', 'Documento', 'Estado', 'Calificación', 'Acciones']}>
-                  {filtered
-                    .toSorted((a, b) => a.verificationStatusId.localeCompare(b.verificationStatusId) || b.gathererId - a.gathererId)
-                    .map((gatherer) => {
+                  {paging.pageItems.map((gatherer) => {
                       const owner = userById.get(gatherer.userId)
                       const rating = ratings.data?.find((item) => item.gathererId === gatherer.gathererId)
                       return (
@@ -148,6 +152,7 @@ export default function GatherersPage() {
                     })}
                 </Table>
               )}
+              {filtered.length > 0 && <Pagination {...paging} onChange={paging.setPage} label="recolectores" />}
             </>
           )}
         </QueryBoundary>

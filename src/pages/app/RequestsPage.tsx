@@ -8,6 +8,8 @@ import { groupDetails, RequestList } from '@/features/requests/RequestList'
 import { useLookups } from '@/features/requests/lookups'
 import { fullName } from '@/lib/format'
 import { FilterBar, FilterSelect, FilterSummary, matchesQuery, SearchInput } from '@/components/ui/filters'
+import { Pagination, usePagination } from '@/components/ui/pagination'
+import type { CollectRequest, RequestDetail } from '@/api/schemas'
 import { EmptyBoxIllustration } from '@/components/brand/Illustrations'
 import { EmptyState } from '@/components/ui/feedback'
 import { ButtonLink, Card } from '@/components/ui/primitives'
@@ -171,13 +173,38 @@ export default function RequestsPage() {
                     }
                   />
                 ) : (
-                  <RequestList requests={visible} detailsByRequest={grouped} showOwner={isAdmin} />
+                  <PagedRequests
+                    requests={visible}
+                    detailsByRequest={grouped}
+                    showOwner={isAdmin}
+                    resetKey={`${filter}|${search}|${material}|${district}|${sort}`}
+                  />
                 )}
               </>
             )
           }}
         </QueryBoundary>
       </Card>
+    </>
+  )
+}
+
+function PagedRequests({
+  requests,
+  detailsByRequest,
+  showOwner,
+  resetKey,
+}: {
+  requests: CollectRequest[]
+  detailsByRequest: Map<number, RequestDetail[]>
+  showOwner: boolean
+  resetKey: string
+}) {
+  const paging = usePagination(requests, resetKey)
+  return (
+    <>
+      <RequestList requests={paging.pageItems} detailsByRequest={detailsByRequest} showOwner={showOwner} />
+      <Pagination {...paging} onChange={paging.setPage} label="solicitudes" />
     </>
   )
 }

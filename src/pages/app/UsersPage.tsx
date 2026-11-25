@@ -7,6 +7,7 @@ import { useAuth } from '@/features/auth/auth'
 import { formatDateOnly, fullName } from '@/lib/format'
 import { FilterBar, FilterSelect, FilterSummary, matchesQuery, SearchInput } from '@/components/ui/filters'
 import { EmptyState, useToast } from '@/components/ui/feedback'
+import { Pagination, usePagination } from '@/components/ui/pagination'
 import { Badge, Button, Card } from '@/components/ui/primitives'
 import { PageHeader, QueryBoundary, Table } from '@/components/ui/widgets'
 
@@ -48,6 +49,7 @@ export default function UsersPage() {
     [users.data, search, role, status],
   )
   const filtersActive = Boolean(search || role || status)
+  const paging = usePagination(filtered, `${search}|${role}|${status}`)
 
   return (
     <>
@@ -87,7 +89,7 @@ export default function UsersPage() {
                 />
               ) : (
                 <Table head={['Usuario', 'Rol', 'Registro', 'Estado', 'Acciones']}>
-                  {filtered.map((item) => (
+                  {paging.pageItems.map((item) => (
                     <tr key={item.userId}>
                       <td className="px-5 py-3.5">
                         <p className="font-medium">{fullName(item)}</p>
@@ -134,6 +136,7 @@ export default function UsersPage() {
                   ))}
                 </Table>
               )}
+              {filtered.length > 0 && <Pagination {...paging} onChange={paging.setPage} label="usuarios" />}
             </>
           )}
         </QueryBoundary>

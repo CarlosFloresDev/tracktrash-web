@@ -5,6 +5,7 @@ import { useCollectionPoints, useLocations } from '@/api/hooks'
 import { PointsMap, type MapPoint } from '@/components/map/PointsMap'
 import { FilterBar, FilterSelect, FilterSummary, matchesQuery, SearchInput } from '@/components/ui/filters'
 import { EmptyState } from '@/components/ui/feedback'
+import { Pagination, usePagination } from '@/components/ui/pagination'
 import { QueryBoundary } from '@/components/ui/widgets'
 import { Card } from '@/components/ui/primitives'
 
@@ -33,6 +34,7 @@ export default function CollectionPointsPage() {
     [active, locationById, search, district],
   )
   const filtersActive = Boolean(search || district)
+  const paging = usePagination(filtered, `${search}|${district}`)
   const resetFilters = () => {
     setSearch('')
     setDistrict('')
@@ -96,54 +98,57 @@ export default function CollectionPointsPage() {
                 </Card>
               ) : (
                 <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.4fr]">
-                  <ul className="order-2 space-y-3 lg:order-1 lg:max-h-[34rem] lg:overflow-y-auto lg:pr-1">
-                    {filtered.map((point) => {
-                      const location = locationById.get(point.locationId)
-                      const isSelected = selected === point.collectionPointId
-                      return (
-                        <li key={point.collectionPointId}>
-                          <button
-                            type="button"
-                            onClick={() => setSelected(point.collectionPointId)}
-                            aria-pressed={isSelected}
-                            className={clsx(
-                              'w-full rounded-2xl border bg-white p-4 text-left shadow-card transition-colors',
-                              isSelected ? 'border-leaf-600 ring-2 ring-leaf-600/20' : 'border-line hover:border-leaf-400',
-                            )}
-                          >
-                            <h2 className="font-display text-lg font-semibold">{point.name}</h2>
-                            {point.description && <p className="mt-1 text-sm text-muted">{point.description}</p>}
-                            <ul className="mt-3 space-y-1.5 text-sm text-ink">
-                              {location && (
-                                <li className="flex items-start gap-2">
-                                  <MapPin className="mt-0.5 size-4 shrink-0 text-leaf-600" aria-hidden="true" />
-                                  {location.address}, {location.district}
-                                </li>
+                  <div className="order-2 lg:order-1">
+                    <ul className="space-y-3 lg:max-h-[34rem] lg:overflow-y-auto lg:pr-1">
+                      {paging.pageItems.map((point) => {
+                        const location = locationById.get(point.locationId)
+                        const isSelected = selected === point.collectionPointId
+                        return (
+                          <li key={point.collectionPointId}>
+                            <button
+                              type="button"
+                              onClick={() => setSelected(point.collectionPointId)}
+                              aria-pressed={isSelected}
+                              className={clsx(
+                                'w-full rounded-2xl border bg-white p-4 text-left shadow-card transition-colors',
+                                isSelected ? 'border-leaf-600 ring-2 ring-leaf-600/20' : 'border-line hover:border-leaf-400',
                               )}
-                              {point.openingHours && (
-                                <li className="flex items-start gap-2">
-                                  <Clock className="mt-0.5 size-4 shrink-0 text-leaf-600" aria-hidden="true" />
-                                  {point.openingHours}
-                                </li>
-                              )}
-                              {point.phone && (
-                                <li className="flex items-start gap-2">
-                                  <Phone className="mt-0.5 size-4 shrink-0 text-leaf-600" aria-hidden="true" />
-                                  {point.phone}
-                                </li>
-                              )}
-                              {point.managerName && (
-                                <li className="flex items-start gap-2">
-                                  <User className="mt-0.5 size-4 shrink-0 text-leaf-600" aria-hidden="true" />
-                                  Encargado: {point.managerName}
-                                </li>
-                              )}
-                            </ul>
-                          </button>
-                        </li>
-                      )
-                    })}
-                  </ul>
+                            >
+                              <h2 className="font-display text-lg font-semibold">{point.name}</h2>
+                              {point.description && <p className="mt-1 text-sm text-muted">{point.description}</p>}
+                              <ul className="mt-3 space-y-1.5 text-sm text-ink">
+                                {location && (
+                                  <li className="flex items-start gap-2">
+                                    <MapPin className="mt-0.5 size-4 shrink-0 text-leaf-600" aria-hidden="true" />
+                                    {location.address}, {location.district}
+                                  </li>
+                                )}
+                                {point.openingHours && (
+                                  <li className="flex items-start gap-2">
+                                    <Clock className="mt-0.5 size-4 shrink-0 text-leaf-600" aria-hidden="true" />
+                                    {point.openingHours}
+                                  </li>
+                                )}
+                                {point.phone && (
+                                  <li className="flex items-start gap-2">
+                                    <Phone className="mt-0.5 size-4 shrink-0 text-leaf-600" aria-hidden="true" />
+                                    {point.phone}
+                                  </li>
+                                )}
+                                {point.managerName && (
+                                  <li className="flex items-start gap-2">
+                                    <User className="mt-0.5 size-4 shrink-0 text-leaf-600" aria-hidden="true" />
+                                    Encargado: {point.managerName}
+                                  </li>
+                                )}
+                              </ul>
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                    <Pagination {...paging} onChange={paging.setPage} label="puntos" />
+                  </div>
                   <div className="order-1 overflow-hidden rounded-2xl border border-line shadow-card lg:sticky lg:top-24 lg:order-2 lg:h-[34rem]">
                     <PointsMap points={mapPoints} selectedId={selected} onSelect={setSelected} className="h-80 w-full lg:h-full" />
                   </div>

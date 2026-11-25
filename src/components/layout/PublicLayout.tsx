@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import clsx from 'clsx'
 import { Menu, X } from 'lucide-react'
@@ -15,7 +15,25 @@ const links = [
 export function PublicLayout() {
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
+
+  // React Router does not scroll to "#section" links; do it once the target exists (sections may load lazily).
+  useEffect(() => {
+    if (!hash) {
+      window.scrollTo({ top: 0 })
+      return
+    }
+    let frame = 0
+    let tries = 0
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const seek = () => {
+      const target = document.getElementById(decodeURIComponent(hash.slice(1)))
+      if (target) target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+      else if (tries++ < 30) frame = requestAnimationFrame(seek)
+    }
+    seek()
+    return () => cancelAnimationFrame(frame)
+  }, [pathname, hash])
   const immersive = pathname === '/ingresar' || pathname === '/registro'
 
   return (

@@ -3,12 +3,13 @@ import { Pencil, Plus } from 'lucide-react'
 import { labels, residueCategories, type ResidueCategory } from '@/api/enums'
 import { collectionPointsApi, locationsApi, residueTypesApi } from '@/api/endpoints'
 import { keys, useCollectionPoints, useInvalidatingMutation, useResidueTypes } from '@/api/hooks'
-import type { CollectionPoint, ResidueType } from '@/api/schemas'
+import type { CollectionPoint, Location, ResidueType } from '@/api/schemas'
 import { useLookups } from '@/features/requests/lookups'
 import { MaterialIcon, materialKind } from '@/components/brand/MaterialIcon'
 import { materialImage } from '@/components/brand/materialImage'
 import { FilterBar, FilterSelect, FilterSummary, matchesQuery, SearchInput } from '@/components/ui/filters'
 import { EmptyState, Modal, useToast } from '@/components/ui/feedback'
+import { Pagination, usePagination } from '@/components/ui/pagination'
 import { Badge, Button, Card, CardHeader, SelectField, TextAreaField, TextField } from '@/components/ui/primitives'
 import { PageHeader, QueryBoundary } from '@/components/ui/widgets'
 
@@ -40,6 +41,7 @@ function ResidueSection() {
       ),
     [query.data, search, category, status],
   )
+  const paging = usePagination(filtered, `${search}|${category}|${status}`)
   const filtersActive = Boolean(search || category || status)
   const resetFilters = () => {
     setSearch('')
@@ -91,7 +93,7 @@ function ResidueSection() {
               />
             ) : (
               <ul className="divide-y divide-line">
-                {filtered.map((item) => (
+                {paging.pageItems.map((item) => (
                   <li key={item.residueTypeId} className="flex items-center gap-4 px-5 py-3.5">
                     {materialImage(item.name) ? (
                       <img src={materialImage(item.name)} alt="" width="44" height="44" loading="lazy" className="size-11 shrink-0 rounded-xl object-cover" />
@@ -113,6 +115,7 @@ function ResidueSection() {
                 ))}
               </ul>
             )}
+            {filtered.length > 0 && <Pagination {...paging} onChange={paging.setPage} label="materiales" />}
           </>
         )}
       </QueryBoundary>
@@ -224,33 +227,51 @@ function PointsSection() {
           items.length === 0 ? (
             <EmptyState title="Sin puntos de acopio" />
           ) : (
-            <ul className="divide-y divide-line">
-              {items.map((item) => {
-                const location = locationById.get(item.locationId)
-                return (
-                  <li key={item.collectionPointId} className="flex items-center gap-4 px-5 py-3.5">
-                    <div className="min-w-0 flex-1">
-                      <p className="flex flex-wrap items-center gap-2 font-medium">
-                        {item.name}
-                        {!item.isActive && <Badge tone="red">Inactivo</Badge>}
-                      </p>
-                      <p className="truncate text-sm text-muted">
-                        {location ? `${location.address}, ${location.district}` : 'Sin dirección'}
-                        {item.openingHours && ` · ${item.openingHours}`}
-                      </p>
-                    </div>
-                    <Button size="sm" variant="ghost" aria-label={`Editar ${item.name}`} onClick={() => setEditing(item)}>
-                      <Pencil className="size-4" aria-hidden="true" />
-                    </Button>
-                  </li>
-                )
-              })}
-            </ul>
+            <PagedPoints items={items} locationById={locationById} onEdit={setEditing} />
           )
         }
       </QueryBoundary>
       <PointDialog editing={editing} onClose={() => setEditing(null)} />
     </Card>
+  )
+}
+
+function PagedPoints({
+  items,
+  locationById,
+  onEdit,
+}: {
+  items: CollectionPoint[]
+  locationById: ReadonlyMap<number, Location>
+  onEdit: (item: CollectionPoint) => void
+}) {
+  const paging = usePagination(items, 'points')
+  return (
+    <>
+      <ul className="divide-y divide-line">
+        {paging.pageItems.map((item) => {
+          const location = locationById.get(item.locationId)
+          return (
+            <li key={item.collectionPointId} className="flex items-center gap-4 px-5 py-3.5">
+              <div className="min-w-0 flex-1">
+                <p className="flex flex-wrap items-center gap-2 font-medium">
+                  {item.name}
+                  {!item.isActive && <Badge tone="red">Inactivo</Badge>}
+                </p>
+                <p className="truncate text-sm text-muted">
+                  {location ? `${location.address}, ${location.district}` : 'Sin dirección'}
+                  {item.openingHours && ` · ${item.openingHours}`}
+                </p>
+              </div>
+              <Button size="sm" variant="ghost" aria-label={`Editar ${item.name}`} onClick={() => onEdit(item)}>
+                <Pencil className="size-4" aria-hidden="true" />
+              </Button>
+            </li>
+          )
+        })}
+      </ul>
+      <Pagination {...paging} onChange={paging.setPage} label="puntos" />
+    </>
   )
 }
 

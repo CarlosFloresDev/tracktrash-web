@@ -118,7 +118,7 @@ function MaterialCard({ name, text, category }: { name: string; text?: string | 
 
 function PublicMaterials() {
   return (
-    <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <ul className="scroll-in mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {publicMaterials.map((item) => (
         <MaterialCard key={item.name} name={item.name} text={item.text} />
       ))}
@@ -132,7 +132,7 @@ function Materials() {
   const recyclable = query.data?.filter((item) => item.isActive).slice(0, 8) ?? []
   if (!user || query.isError) return <PublicMaterials />
   return (
-    <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <ul className="scroll-in mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {query.isPending
         ? Array.from({ length: 4 }, (_, index) => (
             <li key={index}>
@@ -151,12 +151,50 @@ function Materials() {
   )
 }
 
+/** Two copies side by side so translateX(-50%) loops seamlessly. */
+function CloudBand({ className }: { className: string }) {
+  const cloud = (x: number, y: number, s: number) => (
+    <g transform={`translate(${x} ${y}) scale(${s})`} fill="white">
+      <ellipse cx="40" cy="30" rx="40" ry="18" />
+      <ellipse cx="70" cy="20" rx="30" ry="20" />
+      <ellipse cx="100" cy="32" rx="34" ry="15" />
+    </g>
+  )
+  const band = (
+    <svg viewBox="0 0 1200 80" preserveAspectRatio="none" className="h-full w-1/2 shrink-0">
+      {cloud(40, 10, 1)}
+      {cloud(380, 24, 0.7)}
+      {cloud(700, 6, 1.2)}
+      {cloud(1010, 28, 0.8)}
+    </svg>
+  )
+  return (
+    <div aria-hidden="true" className={`pointer-events-none absolute inset-x-0 -z-10 flex w-[200%] ${className}`}>
+      {band}
+      {band}
+    </div>
+  )
+}
+
 export function LandingPage() {
   return (
     <>
       <section className="relative isolate overflow-hidden bg-paper">
-        <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-24 -z-10 size-[28rem] rounded-full bg-lime-300/40 blur-3xl" />
-        <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-10 -z-10 size-[24rem] rounded-full bg-leaf-400/25 blur-3xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-24 -z-10 size-[28rem] animate-sway rounded-full bg-lime-300/40 blur-3xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-10 -z-10 size-[24rem] animate-sway rounded-full bg-leaf-400/25 blur-3xl [animation-delay:-9s]" />
+        <CloudBand className="top-10 h-24 opacity-70 animate-clouds-slow" />
+        <CloudBand className="top-40 h-16 opacity-50 animate-clouds-fast" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          {[
+            { left: '62%', delay: '0s', size: 'size-5' },
+            { left: '80%', delay: '-6s', size: 'size-4' },
+            { left: '44%', delay: '-11s', size: 'size-3.5' },
+          ].map((leaf) => (
+            <svg key={leaf.left} viewBox="0 0 24 24" className={`absolute top-0 ${leaf.size} animate-leaf text-leaf-600/70`} style={{ left: leaf.left, animationDelay: leaf.delay }}>
+              <path fill="currentColor" d="M5 21c8-1 14-7 15-17C10 5 4 11 5 21zm2-3c2-4 5-7 9-9-3 3-6 6-9 9z" />
+            </svg>
+          ))}
+        </div>
         <div className="absolute inset-x-0 bottom-0 -z-10 h-[26rem] opacity-90 sm:h-[30rem]">
           <SkylineScene className="size-full" />
         </div>
@@ -195,7 +233,7 @@ export function LandingPage() {
               alt="Tacho verde sonriente de TrackTrash frente al volcán Misti, junto a cartón, una botella y una planta"
               width="900"
               height="900"
-              className="relative z-10 mx-auto w-full max-w-md drop-shadow-2xl"
+              className="relative z-10 mx-auto w-full max-w-md animate-bob drop-shadow-2xl"
               fetchPriority="high"
             />
           </div>
@@ -210,7 +248,7 @@ export function LandingPage() {
           <p className="mt-3 text-muted">Un flujo simple, con estados claros para quien pide y para quien recoge.</p>
         </div>
         <RouteDiagram className="mx-auto mt-10 hidden w-full max-w-xl md:block" />
-        <ol className="mt-6 grid gap-6 md:grid-cols-3">
+        <ol className="scroll-in mt-6 grid gap-6 md:grid-cols-3">
           {steps.map((step, index) => (
             <Reveal as="li" key={step.title} delay={index * 80} className="rounded-2xl border border-line bg-white p-6 shadow-card">
               <div className="flex items-center gap-3">
@@ -243,7 +281,7 @@ export function LandingPage() {
           <h2 className="font-display text-3xl font-bold sm:text-4xl">Hecho para cada rol</h2>
           <p className="mt-3 text-muted">Cada persona ve solo lo que necesita para cumplir su parte del recojo.</p>
         </div>
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
+        <div className="scroll-in mt-10 grid gap-6 md:grid-cols-3">
           {audiences.map((audience, index) => (
             <Reveal as="article" key={audience.title} delay={index * 80} className="group relative flex flex-col overflow-hidden rounded-2xl bg-pine-900 p-6 text-white">
               <div aria-hidden="true" className="absolute -right-10 -top-10 size-32 rounded-full bg-lime-300/10" />
