@@ -182,13 +182,16 @@ export function LandingPage() {
       <section className="relative isolate overflow-hidden bg-paper">
         <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-24 -z-10 size-[28rem] animate-sway rounded-full bg-lime-300/40 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-10 -z-10 size-[24rem] animate-sway rounded-full bg-leaf-400/25 blur-3xl [animation-delay:-9s]" />
-        <CloudBand className="top-10 h-24 opacity-70 animate-clouds-slow" />
-        <CloudBand className="top-40 h-16 opacity-50 animate-clouds-fast" />
+        <CloudBand className="top-8 h-28 opacity-90 animate-clouds-slow" />
+        <CloudBand className="top-44 h-20 opacity-75 animate-clouds-fast" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
           {[
-            { left: '62%', delay: '0s', size: 'size-5' },
-            { left: '80%', delay: '-6s', size: 'size-4' },
-            { left: '44%', delay: '-11s', size: 'size-3.5' },
+            { left: '62%', delay: '0s', size: 'size-6' },
+            { left: '80%', delay: '-4s', size: 'size-5' },
+            { left: '44%', delay: '-7s', size: 'size-4' },
+            { left: '92%', delay: '-2s', size: 'size-4' },
+            { left: '30%', delay: '-9s', size: 'size-5' },
+            { left: '72%', delay: '-5.5s', size: 'size-3.5' },
           ].map((leaf) => (
             <svg key={leaf.left} viewBox="0 0 24 24" className={`absolute top-0 ${leaf.size} animate-leaf text-leaf-600/70`} style={{ left: leaf.left, animationDelay: leaf.delay }}>
               <path fill="currentColor" d="M5 21c8-1 14-7 15-17C10 5 4 11 5 21zm2-3c2-4 5-7 9-9-3 3-6 6-9 9z" />
@@ -198,7 +201,7 @@ export function LandingPage() {
         <div className="absolute inset-x-0 bottom-0 -z-10 h-[26rem] opacity-90 sm:h-[30rem]">
           <SkylineScene className="size-full" />
         </div>
-        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-28 pt-12 sm:px-6 md:grid-cols-[1.15fr_1fr] md:pb-36 md:pt-20">
+        <div className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-6xl items-center gap-8 px-4 pb-32 pt-12 sm:px-6 md:grid-cols-[1.15fr_1fr] md:pb-44 md:pt-10">
           <div className="animate-fade-up">
             <h1 className="font-display text-4xl font-extrabold leading-[1.05] text-balance sm:text-5xl lg:text-6xl">
               Tus residuos reciclables, <span className="text-leaf-600">recogidos y medidos</span> en Arequipa.

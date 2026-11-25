@@ -92,11 +92,11 @@
 }
 @keyframes sway {
   0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(18px, -10px); }
+  50% { transform: translate(40px, -24px); }
 }
 @keyframes bob {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  50% { transform: translateY(-12px); }
 }
 @keyframes leaf-fall {
   0% { transform: translate(0, -10vh) rotate(0deg); opacity: 0; }
@@ -104,11 +104,11 @@
   90% { opacity: 0.85; }
   100% { transform: translate(-12vw, 70vh) rotate(320deg); opacity: 0; }
 }
-@utility animate-clouds-slow { animation: drift-x 120s linear infinite; }
-@utility animate-clouds-fast { animation: drift-x 70s linear infinite; }
-@utility animate-sway { animation: sway 18s ease-in-out infinite; }
-@utility animate-bob { animation: bob 7s ease-in-out infinite; }
-@utility animate-leaf { animation: leaf-fall 16s linear infinite; }
+@utility animate-clouds-slow { animation: drift-x 55s linear infinite; }
+@utility animate-clouds-fast { animation: drift-x 32s linear infinite; }
+@utility animate-sway { animation: sway 12s ease-in-out infinite; }
+@utility animate-bob { animation: bob 5s ease-in-out infinite; }
+@utility animate-leaf { animation: leaf-fall 11s linear infinite; }
 
 /* Sections ease in as they scroll into view (scroll-driven, no JS); browsers without support simply show them. */
 @supports (animation-timeline: view()) {
@@ -122,6 +122,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-clouds-slow, .animate-clouds-fast, .animate-sway, .animate-bob, .animate-leaf { animation: none; }
+  .animate-sway, .animate-bob, .animate-leaf { animation: none; }
+  .animate-clouds-slow { animation-duration: 160s; }
+  .animate-clouds-fast { animation-duration: 110s; }
   .animate-leaf { display: none; }
 }
