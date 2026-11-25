@@ -1,0 +1,66 @@
+[
+  {
+    "material": "Papel",
+    "image": "/materials/papel.webp",
+    "title": "Paper recycling in Ponte a Serraglio.JPG",
+    "author": "H005",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Paper_recycling_in_Ponte_a_Serraglio.JPG"
+  },
+  {
+    "material": "Cartón",
+    "image": "/materials/carton.webp",
+    "title": "57 Cardboard waste pile for recycling collection in Kuala Lumpur, Malaysia - Creative Commons Attribution.jpg",
+    "author": "Marek Ślusarczyk (Tupungato) Photo portfolio",
+    "license": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:57_Cardboard_waste_pile_for_recycling_collection_in_Kuala_Lumpur,_Malaysia_-_Creative_Commons_Attribution.jpg"
+  },
+  {
+    "material": "Plástico PET",
+    "image": "/materials/plastico-pet.webp",
+    "title": "Bales of PET bottles closeup.jpg",
+    "author": "Grendelkhan",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Bales_of_PET_bottles_closeup.jpg"
+  },
+  {
+    "material": "Plástico HDPE",
+    "image": "/materials/plastico-hdpe.webp",
+    "title": "Milk container types.jpg",
+    "author": "Platonk",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Milk_container_types.jpg"
+  },
+  {
+    "material": "Vidrio",
+    "image": "/materials/vidrio.webp",
+    "title": "Recycling 004 2024 10 23.jpg",
+    "author": "Friedrich Haag",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Recycling_004_2024_10_23.jpg"
+  },
+  {
+    "material": "Aluminio",
+    "image": "/materials/aluminio.webp",
+    "title": "Crushed cans (9691248780).jpg",
+    "author": "Ruth Hartnup from Vancouver, Canada",
+    "license": "CC BY 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Crushed_cans_(9691248780).jpg"
+  },
+  {
+    "material": "Metal ferroso",
+    "image": "/materials/metal-ferroso.webp",
+    "title": "Metal scrap in Aomi.jpg",
+    "author": "Syced",
+    "license": "CC0",
+    "source": "https://commons.wikimedia.org/wiki/File:Metal_scrap_in_Aomi.jpg"
+  },
+  {
+    "material": "Orgánicos",
+    "image": "/materials/organicos.webp",
+    "title": "Worm composting 2.jpg",
+    "author": "Quadell",
+    "license": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Worm_composting_2.jpg"
+  }
+]

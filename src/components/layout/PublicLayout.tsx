@@ -121,6 +121,7 @@ export function PublicLayout() {
                 <li><Link to="/puntos" className="hover:text-white">Puntos de acopio</Link></li>
                 <li><Link to="/registro" className="hover:text-white">Crear cuenta</Link></li>
                 <li><Link to="/ingresar" className="hover:text-white">Ingresar</Link></li>
+                <li><Link to="/creditos" className="hover:text-white">Créditos de imágenes</Link></li>
               </ul>
             </div>
             <div>

@@ -5,6 +5,7 @@ import { useGeneralIndicators, useResidueTypes } from '@/api/hooks'
 import { labels } from '@/api/enums'
 import { formatNumber } from '@/lib/format'
 import { MaterialIcon, materialKind } from '@/components/brand/MaterialIcon'
+import { materialImage } from '@/components/brand/materialImage'
 import { RouteDiagram, SkylineScene } from '@/components/brand/Illustrations'
 import { ButtonLink } from '@/components/ui/primitives'
 import { Skeleton } from '@/components/ui/primitives'
@@ -95,15 +96,31 @@ const publicMaterials = [
   { name: 'Orgánicos', text: 'Restos de cocina y jardín para compostaje.' },
 ]
 
+function MaterialCard({ name, text, category }: { name: string; text?: string | null; category?: string }) {
+  const photo = materialImage(name)
+  return (
+    <li className="overflow-hidden rounded-2xl border border-line bg-white">
+      {photo ? (
+        <img src={photo} alt={name} width="800" height="500" loading="lazy" className="aspect-[8/5] w-full object-cover" />
+      ) : (
+        <div className="grid aspect-[8/5] place-items-center bg-leaf-50">
+          <MaterialIcon kind={materialKind(name)} />
+        </div>
+      )}
+      <div className="p-5">
+        <h3 className="font-display text-lg font-semibold">{name}</h3>
+        {text && <p className="mt-1 text-sm text-muted">{text}</p>}
+        {category && <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-leaf-600">{category}</p>}
+      </div>
+    </li>
+  )
+}
+
 function PublicMaterials() {
   return (
     <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {publicMaterials.map((item) => (
-        <li key={item.name} className="rounded-2xl border border-line bg-white p-5">
-          <MaterialIcon kind={materialKind(item.name)} />
-          <h3 className="mt-4 font-display text-lg font-semibold">{item.name}</h3>
-          <p className="mt-1 text-sm text-muted">{item.text}</p>
-        </li>
+        <MaterialCard key={item.name} name={item.name} text={item.text} />
       ))}
     </ul>
   )
@@ -122,15 +139,13 @@ function Materials() {
               <Skeleton className="h-36" />
             </li>
           ))
-        : recyclable.map((item, index) => (
-            <Reveal as="li" key={item.residueTypeId} delay={(index % 4) * 60} className="rounded-2xl border border-line bg-white p-5">
-              <MaterialIcon kind={materialKind(item.name)} />
-              <h3 className="mt-4 font-display text-lg font-semibold">{item.name}</h3>
-              <p className="mt-1 text-sm text-muted">{item.classificationInstructions ?? item.description}</p>
-              <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-leaf-600">
-                {labels.category[item.residueCategoryId]}
-              </p>
-            </Reveal>
+        : recyclable.map((item) => (
+            <MaterialCard
+              key={item.residueTypeId}
+              name={item.name}
+              text={item.classificationInstructions ?? item.description}
+              category={labels.category[item.residueCategoryId]}
+            />
           ))}
     </ul>
   )

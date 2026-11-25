@@ -11,6 +11,7 @@ import { RegisterPage } from '@/pages/public/RegisterPage'
 import { NotFoundPage } from '@/pages/public/NotFoundPage'
 
 const CollectionPointsPage = lazy(() => import('@/pages/public/CollectionPointsPage'))
+const CreditsPage = lazy(() => import('@/pages/public/CreditsPage'))
 const DashboardPage = lazy(() => import('@/pages/app/DashboardPage'))
 const RequestsPage = lazy(() => import('@/pages/app/RequestsPage'))
 const NewRequestPage = lazy(() => import('@/pages/app/NewRequestPage'))
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
       { index: true, element: <LandingPage /> },
       { element: <RequireAuth shell={false} />, children: [
         { path: 'puntos', element: <Lazy><CollectionPointsPage /></Lazy> },
+        { path: 'creditos', element: <Lazy><CreditsPage /></Lazy> },
       ] },
       { path: 'ingresar', element: <LoginPage /> },
       { path: 'registro', element: <RegisterPage /> },
