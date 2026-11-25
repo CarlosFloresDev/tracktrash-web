@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Pencil, Plus } from 'lucide-react'
 import { labels, residueCategories, type ResidueCategory } from '@/api/enums'
 import { collectionPointsApi, locationsApi, residueTypesApi } from '@/api/endpoints'
@@ -6,6 +6,8 @@ import { keys, useCollectionPoints, useInvalidatingMutation, useResidueTypes } f
 import type { CollectionPoint, ResidueType } from '@/api/schemas'
 import { useLookups } from '@/features/requests/lookups'
 import { MaterialIcon, materialKind } from '@/components/brand/MaterialIcon'
+import { materialImage } from '@/components/brand/materialImage'
+import { FilterBar, FilterSelect, FilterSummary, matchesQuery, SearchInput } from '@/components/ui/filters'
 import { EmptyState, Modal, useToast } from '@/components/ui/feedback'
 import { Badge, Button, Card, CardHeader, SelectField, TextAreaField, TextField } from '@/components/ui/primitives'
 import { PageHeader, QueryBoundary } from '@/components/ui/widgets'
@@ -25,42 +27,94 @@ export default function CatalogPage() {
 function ResidueSection() {
   const query = useResidueTypes()
   const [editing, setEditing] = useState<ResidueType | 'new' | null>(null)
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('')
+  const [status, setStatus] = useState('')
+  const filtered = useMemo(
+    () =>
+      (query.data ?? []).filter(
+        (item) =>
+          matchesQuery(search, item.name, item.description, item.classificationInstructions) &&
+          (!category || item.residueCategoryId === category) &&
+          (!status || (status === 'active' ? item.isActive : !item.isActive)),
+      ),
+    [query.data, search, category, status],
+  )
+  const filtersActive = Boolean(search || category || status)
+  const resetFilters = () => {
+    setSearch('')
+    setCategory('')
+    setStatus('')
+  }
   return (
     <Card>
-      <CardHeader
-        title="Materiales"
-        action={
-          <Button size="sm" onClick={() => setEditing('new')}>
-            <Plus className="size-4" aria-hidden="true" />
-            Agregar
-          </Button>
-        }
-      />
       <QueryBoundary query={query}>
-        {(items) =>
-          items.length === 0 ? (
-            <EmptyState title="Sin materiales" />
-          ) : (
-            <ul className="divide-y divide-line">
-              {items.map((item) => (
-                <li key={item.residueTypeId} className="flex items-center gap-4 px-5 py-3.5">
-                  <MaterialIcon kind={materialKind(item.name)} />
-                  <div className="min-w-0 flex-1">
-                    <p className="flex flex-wrap items-center gap-2 font-medium">
-                      {item.name}
-                      <Badge tone={item.isRecyclable ? 'green' : 'neutral'}>{labels.category[item.residueCategoryId]}</Badge>
-                      {!item.isActive && <Badge tone="red">Inactivo</Badge>}
-                    </p>
-                    {item.classificationInstructions && <p className="truncate text-sm text-muted">{item.classificationInstructions}</p>}
-                  </div>
-                  <Button size="sm" variant="ghost" aria-label={`Editar ${item.name}`} onClick={() => setEditing(item)}>
-                    <Pencil className="size-4" aria-hidden="true" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )
-        }
+        {(items) => (
+          <>
+            <FilterBar>
+              <SearchInput value={search} onChange={setSearch} label="Buscar materiales" placeholder="Nombre, descripción o instrucciones" />
+              <FilterSelect value={category} onChange={setCategory} label="Categoría">
+                <option value="">Todas</option>
+                {residueCategories.map((item) => (
+                  <option key={item} value={item}>
+                    {labels.category[item]}
+                  </option>
+                ))}
+              </FilterSelect>
+              <FilterSelect value={status} onChange={setStatus} label="Estado">
+                <option value="">Todos</option>
+                <option value="active">Activos</option>
+                <option value="inactive">Inactivos</option>
+              </FilterSelect>
+              <FilterSummary shown={filtered.length} total={items.length} active={filtersActive} onReset={resetFilters} />
+            </FilterBar>
+            <CardHeader
+              title="Materiales"
+              action={
+                <Button size="sm" onClick={() => setEditing('new')}>
+                  <Plus className="size-4" aria-hidden="true" />
+                  Agregar
+                </Button>
+              }
+            />
+            {filtered.length === 0 ? (
+              <EmptyState
+                title={filtersActive ? 'Ningún material coincide con la búsqueda' : 'Sin materiales'}
+                description={filtersActive ? 'Prueba con otras palabras o limpia los filtros.' : undefined}
+                action={
+                  filtersActive ? (
+                    <button type="button" onClick={resetFilters} className="font-semibold text-leaf-600 hover:underline">
+                      Limpiar filtros
+                    </button>
+                  ) : undefined
+                }
+              />
+            ) : (
+              <ul className="divide-y divide-line">
+                {filtered.map((item) => (
+                  <li key={item.residueTypeId} className="flex items-center gap-4 px-5 py-3.5">
+                    {materialImage(item.name) ? (
+                      <img src={materialImage(item.name)} alt="" width="44" height="44" loading="lazy" className="size-11 shrink-0 rounded-xl object-cover" />
+                    ) : (
+                      <MaterialIcon kind={materialKind(item.name)} />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="flex flex-wrap items-center gap-2 font-medium">
+                        {item.name}
+                        <Badge tone={item.isRecyclable ? 'green' : 'neutral'}>{labels.category[item.residueCategoryId]}</Badge>
+                        {!item.isActive && <Badge tone="red">Inactivo</Badge>}
+                      </p>
+                      {item.classificationInstructions && <p className="truncate text-sm text-muted">{item.classificationInstructions}</p>}
+                    </div>
+                    <Button size="sm" variant="ghost" aria-label={`Editar ${item.name}`} onClick={() => setEditing(item)}>
+                      <Pencil className="size-4" aria-hidden="true" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
       </QueryBoundary>
       <ResidueDialog editing={editing} onClose={() => setEditing(null)} />
     </Card>
